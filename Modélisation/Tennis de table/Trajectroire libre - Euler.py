@@ -74,7 +74,7 @@ largeurTable = 152.5e-2
 
 positionInitiale = np.array([-1.5,0,0.1])
 vitesseInitiale = np.array([3,3,3])
-vitesseRotation = np.array([0,0,-50])
+vitesseRotation = np.array([0,0,0])
 
 S = np.pi * rayon**2
 h = 1/2*rho*Cx*S
@@ -106,7 +106,7 @@ def tracerTrajectoire(x,y,z,tps):
     axs.grid()
     axs.set_xlabel('Temps en s')
     axs.set_ylabel('x en m')
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
 
     axs=fig.add_subplot(2,2,2)
     axs.plot(tps,y)
@@ -114,7 +114,7 @@ def tracerTrajectoire(x,y,z,tps):
     axs.grid()
     axs.set_xlabel('Temps en s')
     axs.set_ylabel('y en m')
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
     
     axs=fig.add_subplot(2,2,3)
     axs.plot(tps,z)
@@ -122,7 +122,7 @@ def tracerTrajectoire(x,y,z,tps):
     axs.grid()
     axs.set_xlabel('Temps en s')
     axs.set_ylabel('z en m')
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
     
     axs=fig.add_subplot(2,2,4,projection='3d')
     axs.plot(x,y,z)
@@ -130,7 +130,7 @@ def tracerTrajectoire(x,y,z,tps):
     axs.set_xlabel('x(t)')
     axs.set_ylabel('y(t)')
     axs.set_zlabel('z(t)')
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
     plt.show()
 
 tracerTrajectoire(x, y, z, tps)
@@ -142,29 +142,59 @@ def tracerVitesses(vx,vy,vz,tps):
     v=np.sqrt(vx**2+vy**2+vz**2)
     axs.plot(tps,v)
     axs.set_title("Vitesse")
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+   # axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
     axs.grid()
     
     axs=fig.add_subplot(2,2,2)
     axs.plot(tps,vx)
     axs.set_title("Vx")
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
     axs.grid()
     
     axs=fig.add_subplot(2,2,3)
     axs.plot(tps,vy)
     axs.set_title("Vy")
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
     axs.grid()
     
     axs=fig.add_subplot(2,2,4)
     axs.plot(tps,vz)
     axs.set_title("Vz")
-    axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
     axs.grid()
     
     plt.show()
 
 tracerVitesses(vx, vy, vz, tps)
 
+def traceracc(ax,ay,az,tps):
+    fig = plt.figure("Accélération la balle") 
+    
+    axs=fig.add_subplot(2,2,1)
+    a=np.sqrt(ax**2+ay**2+az**2)
+    axs.plot(tps,a)
+    axs.set_title("Accélération")
+   # axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.grid()
+    
+    axs=fig.add_subplot(2,2,2)
+    axs.plot(tps,ax)
+    axs.set_title("Ax")
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.grid()
+    
+    axs=fig.add_subplot(2,2,3)
+    axs.plot(tps,ay)
+    axs.set_title("Ay")
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.grid()
+    
+    axs=fig.add_subplot(2,2,4)
+    axs.plot(tps,az)
+    axs.set_title("Az")
+    #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.grid()
+    
+    plt.show()
 
+traceracc(ax, ay, az, tps)
