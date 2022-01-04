@@ -10,8 +10,6 @@ from PIL import Image
 import cv2
 import time
 
-
-
 def subImageMoy(imListPIL):
     n=len(imListPIL)
     imCentre=numpy.array(imListPIL[n//2],dtype=numpy.uint8)
@@ -93,9 +91,11 @@ def video2listImage(adresseVideo,saveFPS): # Renvoie une liste d'image sous form
     fps = min(saveFPS,videoFPS) # On peut enregistrer moins d'images en mettant un saveFPS 
                                 # inférieur mais pas l'inverse
     fps=videoFPS
+    
     imlist=[]
     continuer = True
     compteur=0
+    print(videoFPS)
     while continuer:
         isRead , frame = video.read()  # A-t-on lu une image et si oui cette image
         if not isRead:
@@ -108,9 +108,9 @@ def video2listImage(adresseVideo,saveFPS): # Renvoie une liste d'image sous form
             compteur+=1
     return imlist
 
-def subImageMoyArr(imListArr): # Renvoie un tableau OpenCV
+def subImageMoyArr(imListArr,posIm): # Renvoie un tableau OpenCV
     n=len(imListArr)
-    imCentre=imListArr[n//2]
+    imCentre=imListArr[posIm]
     imMoy=calcImageMoyenneArr(imListArr)
     
     # Conversion en tableau pour OpenCV
@@ -127,15 +127,17 @@ def calcImageMoyenneArr(imListArr): # Renvoie array
     arr=numpy.array(numpy.mean(images,axis=(0)),dtype=numpy.uint8)
     return arr
 
-def SubImageMoySurListe(imList,tailleMoy):
+
+def SubImageMoySurListe(imList,tailleMoy,PosIm):
     imlistMoy = [0]*tailleMoy
     imlistSubMoy = [0]*(len(imList)-tailleMoy+1)
-    for i in range(tailleMoy//2,len(imList)-tailleMoy//2):
+    for i in range(PosIm,len(imList)-(tailleMoy-PosIm)):
         # On selectionne les images autour de celle centrale
         for j in range(tailleMoy):
-            imlistMoy[j]=imList[j+i-tailleMoy//2]
-        imlistSubMoy[i-tailleMoy//2]=subImageMoyArr(imlistMoy)
+            imlistMoy[j]=imList[j+i-PosIm]
+        imlistSubMoy[i-PosIm]=subImageMoyArr(imlistMoy,PosIm)
     return imlistSubMoy
+
 
 def listImage2Video(imList,writeFPS,nomFichier):
     height,width,layers=imList[0].shape
@@ -173,16 +175,78 @@ def readVideo(nomFichier):
 
 videoReadFile="TT Real Speed.mp4"
 imList = video2listImage(videoReadFile,24) # Tableau d'array
-cv2.imshow('Frame 1',imList[0])
+print(imList)
+cv2.imshow('Frame 1',imList[4])
 
-tailleMoy = 3
-imListSubMoy=SubImageMoySurListe(imList, tailleMoy) # Les mêmes images, auquelles on a 
+tailleMoy = 5
+posIm = 3
+imListSubMoy=SubImageMoySurListe(imList, tailleMoy,posIm) # Les mêmes images, auxquelles on a 
                                                     # enlevé les images moyennes
-cv2.imshow('Frame 1 Sub',imListSubMoy[0])
 
-videoWriteFile="SUB TT Real Speed.mp4"
-videoSub = listImage2Video(imListSubMoy, 24, videoWriteFile)
+cv2.imshow('Frame 1 Sub',imListSubMoy[3])
+
+videoWriteFile="SUB echange_1.mov"
+videoSub = listImage2Video(imListSubMoy, 30, videoWriteFile)
 videoSub.release()
 
 readVideo(videoWriteFile)
 
+
+"""
+
+def readAndWork(adresseVideo,saveFPS,tailleMoy,posIm):
+    video = cv2.VideoCapture(adresseVideo)
+    videoFPS = video.get(cv2.CAP_PROP_FPS)
+    fps = min(saveFPS,videoFPS) # On peut enregistrer moins d'images en mettant un saveFPS 
+                                # inférieur mais pas l'inverse
+    fps=videoFPS
+    imlist=[]
+    compteur=0
+    while len(imlist)<tailleMoy:
+        isRead , frame = video.read()  # A-t-on lu une image et si oui cette image
+        if not isRead:
+            print("Vidéo trop courte par rapport à l'intervalle choisi")
+            return None
+        else:
+            frameTimeCode = compteur/videoFPS
+            if frameTimeCode*fps%1==0: # Si le timeCode*le fps d'enregistrement est entier, on sauvegarde l'image
+                imlist.append(frame)
+            compteur+=1
+    # Ici la liste est complète
+    imgSub = subImageMoyArr(imlist, posIm)
+    
+    # # Détection de la balle # #
+    
+    
+    imlist.pop(0)
+    
+    continuer = True
+    while continuer:
+        isRead , frame = video.read()  # A-t-on lu une image et si oui cette image
+        if not isRead:
+            continuer = False
+        else:
+            frameTimeCode = compteur/videoFPS
+            if frameTimeCode*fps%1==0: # Si le timeCode*le fps d'enregistrement est entier,
+                                       # on sauvegarde l'image
+                imlist.append(frame)
+            compteur+=1
+        imgSub = subImageMoyArr(imlist, posIm)
+        if compteur%10==0:
+            cv2.imshow(str(compteur/10),imgSub)
+        # # Détection de la balle # #
+    
+        imlist.pop(0) # On retire la première image, on va donc en rajouter dans la 
+    
+    
+    return True
+
+
+
+videoReadFile="Table Tennis in Slow Motion.mp4"
+tailleIntervalle=5
+position=2;
+saveFPS=24
+
+readAndWork(videoReadFile, saveFPS, tailleIntervalle, position)
+"""
