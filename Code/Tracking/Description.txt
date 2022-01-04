@@ -1,0 +1,2 @@
+ball_tracking_orange_live.py prend une vidéo en entrée, et permet de visualiser le tracking. Les paramètres sont encore en train d'etre réglés pour notre montage.
+range-detector-video.py est un outil qui aide à régler les bornes sup et inf de l'espace de couleur HSV pour l'algo de tracking.
