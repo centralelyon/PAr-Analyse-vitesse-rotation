@@ -1,0 +1,1 @@
+Vidéos utilisées à titre d'exemple dans le notebook final. Elles sont mises de côtés pour ne pas être supprimées.

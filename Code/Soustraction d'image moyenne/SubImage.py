@@ -197,9 +197,6 @@ readVideo(videoWriteFile)
 def readAndWork(adresseVideo,saveFPS,tailleMoy,posIm):
     video = cv2.VideoCapture(adresseVideo)
     videoFPS = video.get(cv2.CAP_PROP_FPS)
-    fps = min(saveFPS,videoFPS) # On peut enregistrer moins d'images en mettant un saveFPS 
-                                # inférieur mais pas l'inverse
-    fps=videoFPS
     imlist=[]
     compteur=0
     while len(imlist)<tailleMoy:

@@ -1,0 +1,6 @@
+Les dossiers ImTest2, Vidéos et VidéosSUB contiennent des images et des vidéos qui ont servis dans le programme python.
+Le dossier SauvData contient des vidéos générées par le notebook mise de côté pour être sauvegardées. 
+Le dossier Data contient les vidéos que le notebook utilise. Dans chaque dossier se trouve la vidéo originale, la vidéo avec soustraction d'image moyenne et un fichier json explicitant les paramètres de cette dernières.
+On y touve les dimensions de l'images, le nom du fichier source, le nombre d'images par seconde, la durée de la vidéo, la taille de l'intervalle de calcul de l'image moyenne et la position de l'image traitée dans cet intervalle.
+
+Le principe de la soustraction d'image moyenne est le suivant : pour chaque image, on calcule l'image moyenne des images dans un intervalle autour d'elle. Cet intervalle est caractérisée par sa taille (la variable est **tailleIntervalle**) et la position de l'image traitée dans cet intervalle (la variable est **posIm**). Une fois l'image moyenne calculée, on la soustrait à l'image traitée, effacant ainsi tout ce qui est immobile.
