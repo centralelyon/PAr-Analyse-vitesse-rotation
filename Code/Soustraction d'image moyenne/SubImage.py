@@ -5,10 +5,10 @@ Created on Tue Oct 19 17:17:47 2021
 @author: bperr
 """
 
-import os, numpy, PIL
-from PIL import Image
+import os, numpy
 import cv2
 import time
+import matplotlib.pyplot as plt
 
 def subImageMoy(imListPIL):
     n=len(imListPIL)
@@ -85,31 +85,24 @@ for i in range(len(imlistSubMoy)):
 
  # --- Sur une vidéo ---
  
-def video2listImage(adresseVideo,saveFPS): # Renvoie une liste d'image sous forme d'array
+def video2listImage(adresseVideo): # Renvoie une liste d'image sous forme d'array
     video = cv2.VideoCapture(adresseVideo)
     videoFPS = video.get(cv2.CAP_PROP_FPS)
-    fps = min(saveFPS,videoFPS) # On peut enregistrer moins d'images en mettant un saveFPS 
-                                # inférieur mais pas l'inverse
-    fps=videoFPS
-    
+    compteur=0
+    #On commence à enregistrer les images
     imlist=[]
     continuer = True
-    compteur=0
-    print(videoFPS)
     while continuer:
         isRead , frame = video.read()  # A-t-on lu une image et si oui cette image
         if not isRead:
             continuer = False
         else:
-            frameTimeCode = compteur/videoFPS
-            if frameTimeCode*fps%1==0: # Si le timeCode*le fps d'enregistrement est entier,
-                                       # on sauvegarde l'image
-                imlist.append(frame)
+            imlist.append(frame)
             compteur+=1
-    return imlist
+    duree=compteur/videoFPS
+    return imlist,videoFPS,duree
 
 def subImageMoyArr(imListArr,posIm): # Renvoie un tableau OpenCV
-    n=len(imListArr)
     imCentre=imListArr[posIm]
     imMoy=calcImageMoyenneArr(imListArr)
     
@@ -173,25 +166,99 @@ def readVideo(nomFichier):
     cap.release()
 
 
-videoReadFile="TT Real Speed.mp4"
-imList = video2listImage(videoReadFile,24) # Tableau d'array
-print(imList)
-cv2.imshow('Frame 1',imList[4])
-
-tailleMoy = 5
-posIm = 3
-imListSubMoy=SubImageMoySurListe(imList, tailleMoy,posIm) # Les mêmes images, auxquelles on a 
+videoReadFile="Vidéos/echanges_1(1).mov"
+imList, FPS, duree  = video2listImage(videoReadFile) # Tableau d'array
+#cv2.imshow('Frame 1',imList[4])
+"""
+frame = imList[40]
+cv2.imshow('Image en cours de traitement',frame)
+cv2.imshow('Image pré en cours de traitement',imList[39])
+cv2.imshow('Image post en cours de traitement',imList[41])
+frameMoy = calcImageMoyenneArr(imList[38:43])
+cv2.imshow('Image Moyenne',frameMoy)
+frameSub = subImageMoyArr(imList[38:43],3)
+cv2.imshow('ImageSub',frameSub)
+"""
+#tailleMoy = 5
+#posIm = 3
+#imListSubMoy=SubImageMoySurListe(imList, tailleMoy,posIm) # Les mêmes images, auxquelles on a 
                                                     # enlevé les images moyennes
+#cv2.imshow('Frame 1 Sub',imListSubMoy[3])
 
-cv2.imshow('Frame 1 Sub',imListSubMoy[3])
+## Analyse
+def variationListe(L):
+    variation = numpy.zeros((len(L)-1,1))
+    x,y,z=numpy.shape(L[0])
+    for i in range(len(L)-1):
+        cpt=0
+        for j in range(x):
+            for k in range(y):
+                if (abs(L[i][j][k]-L[i+1][j][k])).any()!=0:
+                    cpt+=1
+        variation[i]=cpt/(x*y)*100
+    return variation
 
-videoWriteFile="SUB echange_1.mov"
-videoSub = listImage2Video(imListSubMoy, 30, videoWriteFile)
-videoSub.release()
+def variationListeNorme(L):
+    variation = numpy.zeros((len(L)-1,1))
+    x,y,z=numpy.shape(L[0])
+    for i in range(len(L)-1):
+        for j in range(x):
+            for k in range(y):
+                variation[i]+=numpy.linalg.norm(L[i][j][k]-[255,255,255])
+    return variation
 
-readVideo(videoWriteFile)
+def variationListeNorme2(L):
+    variation = numpy.zeros((len(L)-1,1))
+    x,y,z=numpy.shape(L[0])
+    blanc=numpy.ones((x,y,z))*255
+    for i in range(len(L)-1):
+        variation[i]+=numpy.linalg.norm(L[i]-blanc)
+    return variation
+"""
+n=len(imList)
+nSub=len(imListSubMoy)
 
+numFrame=numpy.arange(nSub//5-1)
+print("débutSub")
+variationPixelSub=variationListeNorme(imListSubMoy[nSub//5:2*(nSub//5)])
+print("finSub")
+print("débutOriginal")
+variationPixel=variationListeNorme(imList[nSub//5+posIm:2*(nSub//5)+posIm])
+print("finOriginal")
 
+plt.figure()
+plt.plot(numFrame,variationPixel)
+plt.plot(numFrame,variationPixelSub)
+plt.grid()
+plt.xlabel("Numéro d'image")
+plt.ylabel("Écart à un pixel blanc")
+plt.title("Somme des normes de l'écart à un pixel blanc")
+plt.legend(["Vidéo originale","Vidéo après soustraction"])
+plt.show()
+"""
+
+plt.figure()
+tailles=[3,5,7,9,11]
+for t in tailles:
+    print(t)
+    p=1+t//2
+    imListSub=SubImageMoySurListe(imList, t, p)
+    nSub=len(imListSub)
+    numFrame=numpy.arange(p,p+nSub//10-1)
+    var=variationListeNorme(imListSub[nSub//10:2*(nSub//10)])
+    plt.plot(numFrame,var)
+    del imListSub
+    del var
+    del numFrame
+plt.grid()
+plt.xlabel("Numéro d'image")
+plt.ylabel("Écart à un pixel blanc")
+plt.title("Influence de la taille de l'intervalle de calcul de l'image moyenne")
+legende=["TailleMoy = "+str(t) for t in tailles]
+plt.legend(legende)
+plt.show()
+
+    
 """
 
 def readAndWork(adresseVideo,saveFPS,tailleMoy,posIm):

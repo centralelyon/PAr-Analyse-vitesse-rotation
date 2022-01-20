@@ -72,8 +72,8 @@ rho = 1.2
 longueurTable = 274e-2
 largeurTable = 152.5e-2
 
-positionInitiale = np.array([-1.5,0,0.1])
-vitesseInitiale = np.array([3,3,3])
+positionInitiale = np.array([-1.5,0,0.05])
+vitesseInitiale = np.array([5,2.5,5])
 vitesseRotation = np.array([0,0,0])
 
 S = np.pi * rayon**2
@@ -107,6 +107,8 @@ def tracerTrajectoire(x,y,z,tps):
     axs.set_xlabel('Temps en s')
     axs.set_ylabel('x en m')
     #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.legend(["Side-Spin +","Side-Spin -","Sans effet"])
+    #axs.legend(["Top-spin","Back-spin","Sans effet"])
 
     axs=fig.add_subplot(2,2,2)
     axs.plot(tps,y)
@@ -115,6 +117,8 @@ def tracerTrajectoire(x,y,z,tps):
     axs.set_xlabel('Temps en s')
     axs.set_ylabel('y en m')
     #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.legend(["Side-Spin +","Side-Spin -","Sans effet"])
+    #axs.legend(["Top-spin","Back-spin","Sans effet"])
     
     axs=fig.add_subplot(2,2,3)
     axs.plot(tps,z)
@@ -123,6 +127,8 @@ def tracerTrajectoire(x,y,z,tps):
     axs.set_xlabel('Temps en s')
     axs.set_ylabel('z en m')
     #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.legend(["Side-Spin +","Side-Spin -","Sans effet"])
+    #axs.legend(["Top-spin","Back-spin","Sans effet"])
     
     axs=fig.add_subplot(2,2,4,projection='3d')
     axs.plot(x,y,z)
@@ -131,6 +137,7 @@ def tracerTrajectoire(x,y,z,tps):
     axs.set_ylabel('y(t)')
     axs.set_zlabel('z(t)')
     #axs.legend(["Sans effet","Top-spin","Back-spin","Side-Spin +","Side-Spin -"])
+    axs.legend(["Sans effet"])
     plt.show()
 
 tracerTrajectoire(x, y, z, tps)
@@ -165,7 +172,7 @@ def tracerVitesses(vx,vy,vz,tps):
     
     plt.show()
 
-tracerVitesses(vx, vy, vz, tps)
+#tracerVitesses(vx, vy, vz, tps)
 
 def traceracc(ax,ay,az,tps):
     fig = plt.figure("Accélération la balle") 
@@ -197,4 +204,4 @@ def traceracc(ax,ay,az,tps):
     
     plt.show()
 
-traceracc(ax, ay, az, tps)
+#traceracc(ax, ay, az, tps)
