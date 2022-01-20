@@ -166,7 +166,7 @@ def readVideo(nomFichier):
     cap.release()
 
 
-videoReadFile="Vidéos/echanges_1(1).mov"
+videoReadFile="TT Real Speed.mp4"
 imList, FPS, duree  = video2listImage(videoReadFile) # Tableau d'array
 #cv2.imshow('Frame 1',imList[4])
 """
@@ -179,9 +179,9 @@ cv2.imshow('Image Moyenne',frameMoy)
 frameSub = subImageMoyArr(imList[38:43],3)
 cv2.imshow('ImageSub',frameSub)
 """
-#tailleMoy = 5
-#posIm = 3
-#imListSubMoy=SubImageMoySurListe(imList, tailleMoy,posIm) # Les mêmes images, auxquelles on a 
+tailleMoy = 5
+posIm = 3
+imListSubMoy=SubImageMoySurListe(imList, tailleMoy,posIm) # Les mêmes images, auxquelles on a 
                                                     # enlevé les images moyennes
 #cv2.imshow('Frame 1 Sub',imListSubMoy[3])
 
@@ -214,16 +214,16 @@ def variationListeNorme2(L):
     for i in range(len(L)-1):
         variation[i]+=numpy.linalg.norm(L[i]-blanc)
     return variation
-"""
+
 n=len(imList)
 nSub=len(imListSubMoy)
 
-numFrame=numpy.arange(nSub//5-1)
+numFrame=numpy.arange(nSub//30-1)
 print("débutSub")
-variationPixelSub=variationListeNorme(imListSubMoy[nSub//5:2*(nSub//5)])
+variationPixelSub=variationListe(imListSubMoy[nSub//30:2*(nSub//30)])
 print("finSub")
 print("débutOriginal")
-variationPixel=variationListeNorme(imList[nSub//5+posIm:2*(nSub//5)+posIm])
+variationPixel=variationListe(imList[nSub//30+posIm:2*(nSub//30)+posIm])
 print("finOriginal")
 
 plt.figure()
@@ -231,12 +231,12 @@ plt.plot(numFrame,variationPixel)
 plt.plot(numFrame,variationPixelSub)
 plt.grid()
 plt.xlabel("Numéro d'image")
-plt.ylabel("Écart à un pixel blanc")
-plt.title("Somme des normes de l'écart à un pixel blanc")
+plt.ylabel("Pourcentage")
+plt.title("Pourcentage de pixels variants d'une image à l'autre")
 plt.legend(["Vidéo originale","Vidéo après soustraction"])
 plt.show()
-"""
 
+"""
 plt.figure()
 tailles=[3,5,7,9,11]
 for t in tailles:
@@ -257,7 +257,7 @@ plt.title("Influence de la taille de l'intervalle de calcul de l'image moyenne")
 legende=["TailleMoy = "+str(t) for t in tailles]
 plt.legend(legende)
 plt.show()
-
+"""
     
 """
 
