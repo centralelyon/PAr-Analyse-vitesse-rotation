@@ -218,23 +218,35 @@ def variationListeNorme2(L):
 n=len(imList)
 nSub=len(imListSubMoy)
 
-numFrame=numpy.arange(nSub//30-1)
+numFrame=numpy.arange(nSub//5-1)
 print("débutSub")
-variationPixelSub=variationListe(imListSubMoy[nSub//30:2*(nSub//30)])
+variationPixelSub=variationListeNorme(imListSubMoy[nSub//5:2*(nSub//5)])
 print("finSub")
 print("débutOriginal")
-variationPixel=variationListe(imList[nSub//30+posIm:2*(nSub//30)+posIm])
+variationPixel=variationListeNorme(imList[nSub//5+posIm:2*(nSub//5)+posIm])
 print("finOriginal")
 
 plt.figure()
 plt.plot(numFrame,variationPixel)
+#plt.plot(numFrame,variationPixelSub)
+plt.grid()
+plt.xlabel("Numéro d'image")
+plt.ylabel("Écart à un pixel blanc")
+plt.title("Somme des normes de l'écart à un pixel blanc - Vidéo originale")
+#plt.legend(["Vidéo originale","Vidéo après soustraction"])
+plt.show()
+
+plt.figure()
+#plt.plot(numFrame,variationPixel)
 plt.plot(numFrame,variationPixelSub)
 plt.grid()
 plt.xlabel("Numéro d'image")
-plt.ylabel("Pourcentage")
-plt.title("Pourcentage de pixels variants d'une image à l'autre")
-plt.legend(["Vidéo originale","Vidéo après soustraction"])
+plt.ylabel("Écart à un pixel blanc")
+plt.title("Somme des normes de l'écart à un pixel blanc - Vidéo après soustraction")
+#plt.legend(["Vidéo originale","Vidéo après soustraction"])
 plt.show()
+
+
 
 """
 plt.figure()

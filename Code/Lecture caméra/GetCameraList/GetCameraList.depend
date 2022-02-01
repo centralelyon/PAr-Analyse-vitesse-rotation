@@ -1,0 +1,13 @@
+# depslib dependency file v1.0
+1643731083 source:d:\ecl\module pro\par\par-analyse-vitesse-rotation\code\lecture caméra\getcameralist\main.cpp
+	<Python.h>
+	<windows.h>
+	<dshow.h>
+	<comutil.h>
+
+1643731057 source:d:\ecl\module pro\par\par-analyse-vitesse-rotation\code\lecture caméra\getcamlist.cpp
+	<Python.h>
+	<windows.h>
+	<dshow.h>
+	<comutil.h>
+
