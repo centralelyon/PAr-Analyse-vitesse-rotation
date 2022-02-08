@@ -9,7 +9,7 @@ import numpy as np
 
 
 """ 
-## Lecture d'un fichier vidéo enregistré sur l'ordinateur ##
+## Lecture d'un fichier vidéo enregistré sur l'ordinateur
 
 @params adresseVideo : adresse du fichier vidéo à ouvrir
 @return imlist : liste d'images représentées par des array de openCV

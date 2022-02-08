@@ -65,7 +65,7 @@ def listImage2Video(imList,writeFPS,nomFichier): #write une image
 namevideo = "Coup_Derriere.mov"
 
 #CETTE LIGNE A CHANGER??
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 fps = camera.get(cv2.CAP_PROP_FPS)
 
 
