@@ -21,7 +21,6 @@ import SubImMoy
         typeSoustraction : trois valeurs possibles : 0 - pas de soustraction
                                                      1 - soustraction d'une image fixe
                                                      2 - soustraction d'image moyenne
-@return None
 """
 def tracking(camera,typeSoustraction):
     # On récupère les paramètres pour le tracking dans le fichier json associé

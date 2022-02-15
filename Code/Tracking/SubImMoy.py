@@ -2,7 +2,7 @@
 """
 Module soustraction de l'image moyenne
 
-@author Baptiste Perreyon, Guillaume Pacsek
+@author Baptiste Perreyon, Guillaume Paczek
 """
 import cv2
 import numpy as np
