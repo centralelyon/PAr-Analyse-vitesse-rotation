@@ -142,7 +142,30 @@ def tracking(camera,typeSoustraction):
     camera.release()
     cv2.destroyAllWindows()
     
+def trackingBillard(frame,upper,lower):
+    #floutage pour éliminer les effets des hautes fréquences
+    blurred=cv2.GaussianBlur(frame,(5,5),0)
+    #convert to hsv
+    hsv=cv2.cvtColor(blurred,cv2.COLOR_BGR2HSV)
+    #construction du masque de couleur
+    mask=cv2.inRange(hsv,lower,upper)
+    #recherche de contour
+    cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
+    center = None
     
+    #si on a trouvé des contours, on trouve le plus grand et on en déduit centroide+cercle ausculateur
+    if len(cnts):
+        #imcont2=cv2.drawContours(frame, cnts, -1, (0,255,0), 1 )
+        #cv2.imshow("Contours sélectionnés",imcont2)
+        
+        c = max(cnts, key=cv2.contourArea)
+        ((x,y),radius)= cv2.minEnclosingCircle(c)
+        
+        M=cv2.moments(c)
+        if M["m00"] and M["m00"] and 5<radius<15:
+            center= ( int(M["m10"]/M["m00"]) , int(M["m01"]/M["m00"]))
+    return center
+
 """
 ## Récupérer les paramètres de tracking dans un fichier JSON
 
@@ -165,4 +188,4 @@ def getParameters(typeSoustraction):
         return upper,lower,0
     
     
-    
+

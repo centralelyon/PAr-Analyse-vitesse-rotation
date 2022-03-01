@@ -46,11 +46,11 @@ def distCorrection(frame,mtx,dist,newMtx,roi):
 @return center : position (X,Y) de la bille sur l'image (en pixels)
 """
 def addPoint(camera,upper,lower,location):
-    print("Placer la bille dans le coin "+location+" puis validez avec la barre d'espace ou la touche entrée")
+    print("Placer la bille rouge dans le coin "+location+" puis validez avec la barre d'espace ou la touche entrée")
     while True:
         key = cv2.waitKey(1)
         (grabbed,frame)=camera.read()
-        cv2.imshow('frame',frame)
+        #cv2.imshow('frame',frame)
         
         #floutage pour éliminer les effets des hautes fréquences
         blurred=cv2.GaussianBlur(frame,(5,5),0)
@@ -58,7 +58,7 @@ def addPoint(camera,upper,lower,location):
         hsv=cv2.cvtColor(blurred,cv2.COLOR_BGR2HSV)
         #construction du masque de couleur
         mask=cv2.inRange(hsv,lower,upper)
-        cv2.imshow("mask",mask)
+        #cv2.imshow("mask",mask)
         #recherche de contour
         cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
         center = None
@@ -90,12 +90,12 @@ def addPoint(camera,upper,lower,location):
        upper : borne supérieure dans l'espace de couleur HSV dans laquelle on va rechercher la balle
        lower : borne inférieure dans l'espace de couleur HSV dans laquelle on va rechercher la balle
        dimensions : dimensions (largeur,longueur) de la table de billard en mm
+       epaisseurBord : épaisseur du bord de la table en mm
        diametre : diametre de la bille en mm
+       
 @return homography : matrice d'homographie entre les deux plans
-        newDim : dimensions de l'image de sortie (en pixels)
 """
-
-def getHomographyForBillard(camera,upper,lower,dimensions,diametre):
+def getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre):
     # Liste des positions sur l'image
     igc = addPoint(camera,upper,lower,"inférieur gauche")
     idc = addPoint(camera,upper,lower,"inférieur droit")
@@ -105,18 +105,50 @@ def getHomographyForBillard(camera,upper,lower,dimensions,diametre):
     
     # Liste des postions dans l'espace, le coin inférieur gauche est (0,0) mais on doit ajouter un décalage du à la taille de la bille
     dx = np.sqrt(2)/4*diametre
-    coordReel=np.array([[dx,dx],[dimensions[0]-dx,dx],[dx,dimensions[1]-dx],[dimensions[0]-dx,dimensions[1]-dx]])
+    coordReel=np.array([[2*epaisseurBord+dx,2*epaisseurBord+dx],[2*epaisseurBord+dimensions[0]-dx,2*epaisseurBord+dx],[2*epaisseurBord+dx,2*epaisseurBord+dimensions[1]-dx],[2*epaisseurBord+dimensions[0]-dx,2*epaisseurBord+dimensions[1]-dx]])
     
     # Calcul de l'homographie
-    factor = 0.15
-    translate = np.array([[1,0,factor*1000],[0,1,factor*500],[0,0,1]])
     h, status = cv2.findHomography(coordPixel,coordReel)
+    translate = np.array([[1,0,-epaisseurBord],[0,1,-epaisseurBord],[0,0,1]])
     homography = translate.dot(h)
-    newDim = (int(factor*5000),int(factor*6500))
+    
+    
     
     # Juste pour vérification, à supprimer après
+    print("Retirez la boule puis validez avec la barre d'espace ou la touche entrée")
+    while True:
+        key = cv2.waitKey(1)
+        grabbed,frame = camera.read()
+        cv2.imshow('frame',frame)
+        if key==ord(' ') or key==ord("\r"): # Validation par l'utilisateur
+            break
+    cv2.destroyAllWindows()
     grabbed,frame = camera.read()
-    imReg = cv2.warpPerspective(frame,homography,newDim)
-    cv2.imshow('rect',imReg)
+    dim=(dimensions[0]+2*epaisseurBord,dimensions[1]+2*epaisseurBord)
+    imReg = cv2.warpPerspective(frame,homography,dim)
+    #cv2.imshow('rect',imReg)
     
-    return homography,newDim
+    return homography,imReg
+
+"""
+## Détermine les coordonées réelles d'un point à partir de l'homographie calculée
+
+@param coord : coordonées de l'objet en pixel
+       homography : matrice d'homographie entre le plan de la caméra et une vu de dessus de la table
+       dimensions : dimensions (largeur,longueur) de la table de billard en mm
+       epaisseurBord : épaisseur du bord de la table en mm
+       
+@return (x,y) : coordonées de la bille dans le repère centré sur le centre de la table
+"""
+def findRealCoordinatesBillard(coord,homography,dimensions,epaisseurBord):
+    # Coordonées homogènes pour appliquer la transformation
+    coordHomogenes = np.array(list(coord)+[1])
+    # Application de l'homographie
+    newCoordHomogenes = np.dot(homography,coordHomogenes)
+    # Transformation en coordonées réelles
+    x,y=newCoordHomogenes[0]/newCoordHomogenes[2],newCoordHomogenes[1]/newCoordHomogenes[2]
+    # Placement dans le repère (centre de la table de billard)
+    x = x-epaisseurBord-dimensions[0]/2
+    y = y-epaisseurBord-dimensions[1]/2
+    
+    return (x,y)
