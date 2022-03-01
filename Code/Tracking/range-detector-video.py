@@ -84,8 +84,9 @@ def main():
     namevideo = "echanges_1.mov"
     namevideo = "SUB_echanges_1.mp4"
 
-    camera = cv2.VideoCapture(namevideo)
-
+    #camera = cv2.VideoCapture(namevideo)
+    camera = cv2.VideoCapture(0)
+    
     while True:
         
         (grabbed,frame)=camera.read()

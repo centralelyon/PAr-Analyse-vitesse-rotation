@@ -64,7 +64,6 @@ def tracking(camera,typeSoustraction):
             frame=cv2.subtract(frame,fondInitial)
         elif (typeSoustraction==2):
             frames.appendleft(frame)
-            processedFrame = frames[tailleIntervalle//2]
             frame=SubImMoy.calcImageMoyenneArr(frames,tailleIntervalle//2)
         
         
@@ -157,14 +156,13 @@ def getParameters(typeSoustraction):
     
     with open(name) as json_data:
         data_dict=json.load(json_data)
-    upper=tuple(map(int,data_dict["upperBorn"][1:-2].split(',')))
-    lower=tuple(map(int,data_dict["lowerBorn"][1:-2].split(',')))
+    upper=tuple(map(int,data_dict["upperBorn"][1:-1].split(',')))
+    lower=tuple(map(int,data_dict["lowerBorn"][1:-1].split(',')))
     if (typeSoustraction==2):
         tailleIntervalle=int(data_dict["tailleIntervalle"])
         return upper,lower,tailleIntervalle
     else:
         return upper,lower,0
-    
     
     
     
