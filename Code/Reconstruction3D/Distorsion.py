@@ -24,19 +24,22 @@ objp[:,:2] = np.mgrid[0:a,0:b].T.reshape(-1,2)
 
 objp=objp*50 # Dimensions en mm
 
-sys.exit()
+
 # Arrays to store object points and image points from all the images.
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
-
-images = glob.glob('Images_echiquier2/*.jpg')
+i=0
+images = glob.glob('Images_echiquier3/*.jpg')
 for fname in images:
+    
     img = cv.imread(fname)
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     
     # Find the chess board corners
     ret, corners = cv.findChessboardCorners(gray, (a,b), None) # (8,8) :grille
-    print(ret)
+    if ret==True:
+        i+=1
+    print(ret,fname)
     # If found, add object points, image points (after refining them)
     if ret == True:
         objpoints.append(objp)
@@ -47,6 +50,8 @@ for fname in images:
         cv.imshow('img', img)
         cv.waitKey(500)
 #cv.destroyAllWindows()
+
+print(i)
 
 """
 # termination criteria
@@ -91,7 +96,7 @@ ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.sha
 
 """ Dé-distorsion """
 
-img = cv.imread('test.jpg')
+img = cv.imread('test2.jpg')
 h,  w = img.shape[:2]
 newcameramtx, roi = cv.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h)) # (w,h) : taille de l'image originale et nouvelle taille-->roi
 
@@ -104,5 +109,5 @@ cv.imwrite('calibresult.png', dst)
 
 """ Sauvegarde des paramètres dans un fichier annexe """
 
-np.savez("IntrisicParameters2.npz",mtx=mtx,dist=dist,r=rvecs,t=tvecs)
+np.savez("IntrisicParameters3.npz",mtx=mtx,dist=dist,r=rvecs,t=tvecs)
 

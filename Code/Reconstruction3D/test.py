@@ -7,13 +7,13 @@ Created on Tue Feb 15 15:12:01 2022
 
 import numpy as np
 import cv2
-"""
+
 camera = cv2.VideoCapture(0)
 
 grabbed, frame = camera.read()
 h,  w = frame.shape[:2]
 
-distorsionData = np.load("IntrisicParameters.npz")
+distorsionData = np.load("IntrisicParameters3.npz")
 mtx=distorsionData['mtx']
 dist = distorsionData['dist']
 rvecs = distorsionData['r']
@@ -40,7 +40,7 @@ while True:
     x, y, w, h = roi
     frameRect = frameRect[y:y+h, x:x+w]
     cv2.imshow("Image post traitement",frameRect)
-    
+    """
     ret, corners = cv2.findChessboardCorners(frame, (a,b), None) # (8,8) :grille
     #corners2 = cv2.cornerSubPix(frame,corners, (11,11), (-1,-1), criteria)
     corn = corners.reshape((49,2))
@@ -49,11 +49,11 @@ while True:
     imReg = cv2.warpPerspective(frame, translate.dot(h),(frame.shape[1],frame.shape[0]))
     
     cv2.imshow('Image rectifiee',imReg)
-    
-    key = cv2.waitKey(100)
-    if key ==27:
+    """
+    key = cv2.waitKey(1)
+    if key ==ord('q'):
         break
-"""
+
 """
 frame = cv2.imread("Billard4.jpg")
 cv2.imshow('Image originelle',frame)
@@ -146,8 +146,8 @@ def getHomographyForBillard(camera,upper,lower,dimensions,diametre):
     
     return homography,newDim
 
-
+"""
 camera = cv2.VideoCapture(0)
 upper=(138,207,177)
 lower=(91,73,19)
-h,nd = getHomographyForBillard(camera, upper, lower,(400,800),65.5) 
+h,nd = getHomographyForBillard(camera, upper, lower,(400,800),65.5) """
