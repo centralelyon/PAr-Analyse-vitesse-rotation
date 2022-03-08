@@ -15,6 +15,25 @@ import cv2
 import numpy as np
 import time as t
 
+# Ext : 91.5 x 51
+# Int : 80 x 39.5
+
+def positionnerTable(dimInt,dimExt):
+    img = np.zeros((1080,1920,3))
+    color = (255,255,255)
+    bordX=45
+    bordY=30
+    corner1 = (bordX,bordY)
+    corner2 = (bordX+dimExt[0]*2,bordY+dimExt[1]*2)
+    
+    corner3= (bordX+(dimExt[0]-dimInt[0]),bordY+(dimExt[1]-dimInt[1]))
+    corner4 = (corner3[0]+dimInt[0]*2,corner3[1]+dimInt[1]*2)
+    
+    # Extérieur
+    cv2.rectangle(img,corner1,corner2,color,5)
+    # Intérieur
+    cv2.rectangle(img,corner3,corner4,color,5)
+    cv2.imshow('rect',img)
 
 def affTraj(listPos):
     imgFond=np.ones((1080,1920,3))*255
@@ -48,7 +67,7 @@ diametre = 61.5
 
 hg,imgFond = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
 imgFondRotated = cv2.rotate(imgFond,cv2.ROTATE_90_CLOCKWISE)
-imgFondResized = cv2.resize(imgFondRotated,(1920,1080),interpolation = cv2.INTER_NEAREST)
+imgFondResized = cv2.resize(imgFondRotated,(1080,1920),interpolation = cv2.INTER_NEAREST)
 
 
 
