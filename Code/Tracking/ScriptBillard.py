@@ -13,6 +13,29 @@ import SubImMoy
 
 import cv2
 import numpy as np
+import time as t
+
+
+def affTraj(listPos):
+    imgFond=np.ones((1080,1920,3))*255
+    color = (0,0,255)
+    thickness = 5
+    for i in range (len(listPos)-1):
+        cv2.line(imgFond,listPos[i],listPos[i+1],color,thickness)
+    #cv2.namedWindow("Projection", cv2.WND_PROP_FULLSCREEN)          
+    #cv2.setWindowProperty("Projection", cv2.WND_PROP_FULLSCREEN, cv2.CV_WINDOW_FULLSCREEN)
+    cv2.imshow('Projection',imgFond)
+    
+def getCoordProjection(coord):
+    
+    coordArray=np.array([coord[0],coord[1]])
+    rotation = np.array([[0,1],[1,0]])
+    scaling = np.array([[1080/505 , 0],[0 , 1920/910]])
+    coordP = np.dot(np.dot(scaling,rotation),coordArray)
+    
+    coordRounded = (int(round(coordP[0])),int(round(coordP[1])))
+    return coordRounded
+
 
 # Script d'éxécution pour le billard : on trouve l'homographie et on affiche la camera avec les deux coordonées
 
@@ -24,6 +47,15 @@ epaisseurBord = 55
 diametre = 61.5
 
 hg,imgFond = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
+imgFondRotated = cv2.rotate(imgFond,cv2.ROTATE_90_CLOCKWISE)
+imgFondResized = cv2.resize(imgFondRotated,(1920,1080),interpolation = cv2.INTER_NEAREST)
+
+
+
+listPos=[]
+listPosProj=[]
+listTimeAdd=[]
+tempsTrace = 3
 
 
 while True:
@@ -50,10 +82,25 @@ while True:
         yR = round(y,1)
         c = (int(x),int(y))
         
-       
+        
         cv2.circle(imf,c,20,(0,0,255),-1)
         cv2.putText(imf,"Coordonees : "+str(realCenterRound),(20,35),cv2.FONT_HERSHEY_SIMPLEX,0.75,(0,0,255),2)
         cv2.imshow('Image projetee',imf)
+        
+        listPos.append(realCenter)
+        listPosProj.append(getCoordProjection(c))
+        listTimeAdd.append(t.time())
+        currentTime = t.time()
+        if (currentTime-listTimeAdd[0]>tempsTrace):
+            listPosProj.pop(0)
+            listTimeAdd.pop(0)
+        
+        
+        affTraj(np.array(listPosProj))
     
     if key==ord('q'): # quitter avec 'q'
         break
+
+
+
+    

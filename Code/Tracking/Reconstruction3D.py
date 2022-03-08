@@ -109,9 +109,13 @@ def getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre
     
     # Calcul de l'homographie
     h, status = cv2.findHomography(coordPixel,coordReel)
-    translate = np.array([[1,0,-epaisseurBord],[0,1,-epaisseurBord],[0,0,1]])
-    homography = translate.dot(h)
     
+    if status.all():
+        translate = np.array([[1,0,-epaisseurBord],[0,1,-epaisseurBord],[0,0,1]])
+        homography = translate.dot(h)
+    else:
+        print("Erreur, on recommence")
+        getHomographyForBillard(camera, upper, lower, dimensions, epaisseurBord, diametre)
     
     
     # Juste pour vérification, à supprimer après
