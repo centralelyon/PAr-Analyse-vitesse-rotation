@@ -13,6 +13,7 @@ import SubImMoy
 
 import cv2
 import numpy as np
+import time as t
 
 
 def affTraj(listPos):
@@ -53,6 +54,9 @@ imgFondResized = cv2.resize(imgFondRotated,(1920,1080),interpolation = cv2.INTER
 
 listPos=[]
 listPosProj=[]
+listTimeAdd=[]
+tempsTrace = 3
+
 
 while True:
     key = cv2.waitKey(1)
@@ -85,6 +89,11 @@ while True:
         
         listPos.append(realCenter)
         listPosProj.append(getCoordProjection(c))
+        listTimeAdd.append(t.time())
+        currentTime = t.time()
+        if (currentTime-listTimeAdd[0]>tempsTrace):
+            listPosProj.pop(0)
+            listTimeAdd.pop(0)
         
         
         affTraj(np.array(listPosProj))
