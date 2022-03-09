@@ -50,6 +50,7 @@ def addPoint(camera,upper,lower,location):
     while True:
         key = cv2.waitKey(1)
         (grabbed,frame)=camera.read()
+        
         #cv2.imshow('frame',frame)
         
         #floutage pour éliminer les effets des hautes fréquences
@@ -77,6 +78,8 @@ def addPoint(camera,upper,lower,location):
             if radius < 10 and not (center is None): #j'ai enlevé la condition "radius >3". Changer ce critère
                 cv2.circle(frame,(int(x),int(y)),int(radius), (0,255,255),2)
                 cv2.circle(frame,center,5,(0,0,255),-1)
+        else:
+            cv2.imshow("Contours sélectionnés",frame)
         
         if key==ord(' ') or key==ord("\r"): # Validation par l'utilisateur
             break
