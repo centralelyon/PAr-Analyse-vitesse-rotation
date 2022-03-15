@@ -14,15 +14,24 @@ import SubImMoy
 import cv2
 import numpy as np
 import time as t
+import screeninfo
 
 # Ext : 91.5 x 51
 # Int : 80 x 39.5
+
+def onClick(event,x,y,flags,params):
+    if event==cv2.EVENT_LBUTTONDOWN:
+        print(x,y)
+        img=image.copy()
+        cv2.circle(img,(x,y),2,(255,0,0),-1)
+        cv2.putText(img,str(x)+"-"+str(y),(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.75,(0,0,255),2)
+        cv2.imshow(window_name,img)
 
 def positionnerTable(dimInt,dimExt):
     img = np.zeros((1080,1920,3))
     color = (255,255,255)
     bordX=45
-    bordY=30
+    bordY=10
     corner1 = (bordX,bordY)
     corner2 = (bordX+dimExt[0]*2,bordY+dimExt[1]*2)
     
@@ -35,9 +44,9 @@ def positionnerTable(dimInt,dimExt):
     cv2.rectangle(img,corner3,corner4,color,5)
     cv2.imshow('rect',img)
 
-def affTraj(listPos):
-    imgFond=np.ones((1080,1920,3))*255
-    color = (0,0,255)
+def affTraj(listPos,imFond):
+    imgFond=imFond.copy()
+    color = (255,255,255)
     thickness = 5
     for i in range (len(listPos)-1):
         cv2.line(imgFond,listPos[i],listPos[i+1],color,thickness)
@@ -56,6 +65,7 @@ def getCoordProjection(coord):
     return coordRounded
 
 
+
 # Script d'éxécution pour le billard : on trouve l'homographie et on affiche la camera avec les deux coordonées
 
 camera = cv2.VideoCapture(0)
@@ -70,12 +80,37 @@ imgFondRotated = cv2.rotate(imgFond,cv2.ROTATE_90_CLOCKWISE)
 imgFondResized = cv2.resize(imgFondRotated,(1080,1920),interpolation = cv2.INTER_NEAREST)
 
 
+screen = screeninfo.get_monitors()[0]
+height,width = np.shape(imgFondRotated)
+image = imgFondRotated
+#image = np.ones((height, width, 3), dtype=np.float32)
+image[:10, :10] = 0  # black at top-left corner
+image[height - 10:, :10] = [1, 0, 0]  # blue at bottom-left
+image[:10, width - 10:] = [0, 1, 0]  # green at top-right
+image[height - 10:, width - 10:] = [0, 0, 1] 
+
+window_name = 'projector'
+cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
+cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
+cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
+cv2.setMouseCallback(window_name,onClick)
+cv2.imshow(window_name, image)
+
+while (True):
+    k=cv2.waitKey(1)
+    if k == ord('q'):
+        break
+
+"""
+
+
+
 
 listPos=[]
 listPosProj=[]
 listTimeAdd=[]
 tempsTrace = 3
-
 
 while True:
     key = cv2.waitKey(1)
@@ -106,8 +141,9 @@ while True:
         cv2.putText(imf,"Coordonees : "+str(realCenterRound),(20,35),cv2.FONT_HERSHEY_SIMPLEX,0.75,(0,0,255),2)
         cv2.imshow('Image projetee',imf)
         
+        c2 = (int(y),int(x))
         listPos.append(realCenter)
-        listPosProj.append(getCoordProjection(c))
+        listPosProj.append(getCoordProjection(c2))
         listTimeAdd.append(t.time())
         currentTime = t.time()
         if (currentTime-listTimeAdd[0]>tempsTrace):
@@ -121,5 +157,4 @@ while True:
         break
 
 
-
-    
+  """  
