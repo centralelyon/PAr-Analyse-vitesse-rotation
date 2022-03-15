@@ -30,11 +30,8 @@ import screeninfo
 
 
 
-def positionnerTable(w,h,fenetre):
+def positionnerTable(img,fenetre):
     print("Veuillez positioner l'intérieur de la table dans le rectangle")
-    img = np.ones((h,w,3))
-    color = (0,0,0)
-    cv2.rectangle(img,(150,150),(int(0.77604*w),int(0.71782*h)),color,5)
     cv2.imshow(fenetre,img)
     while True:
         k = cv2.waitKey(1)
@@ -44,10 +41,13 @@ def positionnerTable(w,h,fenetre):
 
 def affTraj(listPos,imFond,fenetre):
     color = (0,0,0)
+    for i in range (len(listPos)-1):
+        cv2.line(imFond,listPos[i],listPos[i+1],color,5)
+        
+def affTrajPrevis(listPos,imFond,fenetre):
+    color = (0,0,0)
     for i in range (len(listPos)):
-        cv2.circle(imFond,(listPos[i]),3,color,-1)
-    h,w = np.shape(imFond)[:2]
-    cv2.rectangle(imFond,(150,150),(int(0.77604*w),int(0.71782*h)),color,10)
+        cv2.circle(imFond,(listPos[i]),15,color,-1)
     
 def getCoordProjection(coord,l,L,w,h):   
     xreel,yreel = coord
@@ -61,7 +61,7 @@ def getCoordProjection(coord,l,L,w,h):
     coefY = (h*0.71782-150)/l
     x4=150+int(round(x3*coefX))
     y4=150+int(round(y3*coefY))
-    print(x4,y4)
+    #print(x4,y4)
     return (x4,y4)
 
 def detectionArret(pos,seuil): # Liste de position dont la taille a été réglée par l'ajout ponctuel de positions
@@ -82,12 +82,16 @@ def detectionArret(pos,seuil): # Liste de position dont la taille a été régl�
 screen = screeninfo.get_monitors()[0]
 height,width = screen.height,screen.width
 fond = np.ones((height,width,3))
+fond = cv2.rectangle(fond,(150,150),(int(0.77604*width),int(0.71782*height)),(0,0,0),5)
+
+
+
 window_name = 'projector'
 cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-positionnerTable(width, height,window_name)
+positionnerTable(fond,window_name)
 
 
 camera = cv2.VideoCapture(1)
@@ -105,7 +109,7 @@ window_name = 'projector'
 cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
-cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
+#cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
 
 
 
@@ -124,6 +128,7 @@ derniereTrajectoire=[] #enregistre complètement la dernière trajectoire, chaqu
 finTrajectoire=[] #enregistre les dernières positions de la trajectoire, chaque tempsAjoutTrajectoire
 trajectoiresSauvegardees=[]
 arret=False
+positionArret=(0,0)
 
 mode = 0
 
@@ -151,7 +156,7 @@ while True:
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
             
-            affTraj(np.array(listPosProj),fond,window_name)
+            affTraj(np.array(listPosProj),fond2,window_name)
             
             #traitement de la trajectoire à sauvegarder, détection de l'arret
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
@@ -166,7 +171,7 @@ while True:
         
         #detection arret
         if arret:
-            cv2.putText(fond2,"A l'arret",(150 + width/0.77604 +200,50),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+            cv2.putText(fond2,"A l'arret",( int(width*0.77604) +250,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
             if  not(detectionArret(finTrajectoire, seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
                 finTrajectoire=[positionArret]
@@ -174,8 +179,9 @@ while True:
                 arret=False
     
         else:
-            cv2.putText(fond2,"En mouvement",(150 + width/0.77604 +200,50),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
-            if detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
+            cv2.putText(fond2,"En mouvement",( int(width*0.77604) +250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
+            if  len(finTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
                 positionArret=realCenter
                 arret=True
         
@@ -206,7 +212,7 @@ while True:
         
         
     if mode == 1:
-        cv2.putText(fond2,"Selection coup",(150 + width/0.77604 + 200,20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+        cv2.putText(fond2,"Selection coup",( int(width*0.77604)+250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         #sélection rapide avec les numéros du clavier,
         #dans le futur: prévisualisation et sélection avec des flèches
     
