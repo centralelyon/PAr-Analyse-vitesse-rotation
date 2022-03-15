@@ -43,14 +43,11 @@ def positionnerTable(w,h,fenetre):
             break
 
 def affTraj(listPos,imFond,fenetre):
-    imFond2=imFond.copy()
     color = (0,0,0)
-    thickness = 5
-    for i in range (len(listPos)-1):
-        cv2.line(imFond2,listPos[i],listPos[i+1],color,thickness)
-    h,w = np.shape(imFond2)[:2]
-    cv2.rectangle(imFond2,(150,150),(int(0.77604*w),int(0.71782*h)),color,10)
-    cv2.imshow(fenetre,imFond2)
+    for i in range (len(listPos)):
+        cv2.circle(imFond,(listPos[i]),3,color,-1)
+    h,w = np.shape(imFond)[:2]
+    cv2.rectangle(imFond,(150,150),(int(0.77604*w),int(0.71782*h)),color,10)
     
 def getCoordProjection(coord,l,L,w,h):   
     xreel,yreel = coord
@@ -66,6 +63,17 @@ def getCoordProjection(coord,l,L,w,h):
     y4=150+int(round(y3*coefY))
     print(x4,y4)
     return (x4,y4)
+
+def detectionArret(pos,seuil): # Liste de position dont la taille a été réglée par l'ajout ponctuel de positions
+    lastPos = pos[-1]
+    nbpos = len(pos)
+    immobile = True
+    i=0
+    while immobile and i<nbpos-1:
+        if (pos[i][0]-lastPos[0])**2+(pos[i][1]-lastPos[1])**2>seuil**2:
+            immobile = False
+        i=i+1
+    return immobile  
 
 
 
@@ -89,9 +97,10 @@ longueur = 800
 epaisseurBord = 55
 diametre = 61.5
 
-hg,imgFond = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
+hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
 
 
+#redéfinition car cv2.destroyAllWIndows dans positionnerTable a supprimé les propriétés
 window_name = 'projector'
 cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
@@ -105,42 +114,104 @@ listPosProj=[]
 listTimeAdd=[]
 tempsTrace = 3
 
+tempsAjoutTrajectoire=0.2 #pour la sauvegarde de trajectoire et la détection d'arret, on regarde toutes les 0.2 sec
+tempsDetectionArret=2 #critère d'arret: 2 sec immobile
+seuil = 10 #critère d'arret: pas de variation de + de 10 mm
+
+
+instantDernierAjout=t.time()
+derniereTrajectoire=[] #enregistre complètement la dernière trajectoire, chaque tempsAjoutTrajectoire
+finTrajectoire=[] #enregistre les dernières positions de la trajectoire, chaque tempsAjoutTrajectoire
+trajectoiresSauvegardees=[]
+arret=False
+
+mode = 0
+
+
 while True:
     key = cv2.waitKey(1)
-    grabbed,frame = camera.read()
+    fond2 = fond.copy()
     
-    center = ModuleTracking.trackingBillard(frame,upper,lower)
     
-    if center !=None:
-        #Caméra
-        realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
-        realCenterRound=(round(realCenter[0],1),round(realCenter[1],1))
-        cv2.circle(frame,center,5,(0,0,255),-1)
-        cv2.putText(frame,"Coordonees pixels : "+str(center),(50,50),cv2.FONT_HERSHEY_SIMPLEX,0.75,(0,0,255),2)
-        cv2.putText(frame,"Coordonees reeles : "+str(realCenterRound),(50,80),cv2.FONT_HERSHEY_SIMPLEX,0.75,(0,0,255),2)
+    if mode == 0:
+        grabbed,frame = camera.read()
         
-        #cv2.imshow('Image camera',frame)
+        center = ModuleTracking.trackingBillard(frame,upper,lower)
         
-        # Projection
-        # x = realCenter[0]+epaisseurBord+largeur/2
-        # y = realCenter[1]+epaisseurBord+longueur/2
-        # xR = round(x,1)
-        # yR = round(y,1)
-        # c = (int(x),int(y))        
-        #cv2.circle(imf,c,20,(0,0,255),-1)
-        #cv2.putText(imf,"Coordonees : "+str(realCenterRound),(20,35),cv2.FONT_HERSHEY_SIMPLEX,0.75,(0,0,255),2)
-        #cv2.imshow('Image projetee',imf)
+        if center !=None:
+            #Caméra
+            realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
+                    
+            listPosProj.append(getCoordProjection(realCenter,largeur,longueur,width,height))
+            listTimeAdd.append(t.time())
+            currentTime = t.time()
+            
+            #traitement de la trajectoire à tracer: 
+            if (currentTime-listTimeAdd[0]>tempsTrace):
+                listPosProj.pop(0)
+                listTimeAdd.pop(0)
+            
+            affTraj(np.array(listPosProj),fond,window_name)
+            
+            #traitement de la trajectoire à sauvegarder, détection de l'arret
+            if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
+                instantDernierAjout=t.time()
+                
+                derniereTrajectoire.append(realCenter)
+                finTrajectoire.append(realCenter) 
+                
+                if len(finTrajectoire)>=tempsDetectionArret/tempsAjoutTrajectoire: #la détection de l'arret ne se fait que sur la fin de la trajectoire
+                    finTrajectoire.pop(0)
+                    
         
-        listPos.append(realCenter)
-        listPosProj.append(getCoordProjection(realCenter,largeur,longueur,width,height))
-        listTimeAdd.append(t.time())
-        currentTime = t.time()
-        if (currentTime-listTimeAdd[0]>tempsTrace):
-            listPosProj.pop(0)
-            listTimeAdd.pop(0)
+        #detection arret
+        if arret:
+            cv2.putText(fond2,"A l'arret",(150 + width/0.77604 +200,50),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+            if  not(detectionArret(finTrajectoire, seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+                #réinitialiser et initialiser les liste de tracking
+                finTrajectoire=[positionArret]
+                derniereTrajectoire=[positionArret]
+                arret=False
+    
+        else:
+            cv2.putText(fond2,"En mouvement",(150 + width/0.77604 +200,50),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+            if detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
+                positionArret=realCenter
+                arret=True
         
         
-        affTraj(np.array(listPosProj),fond,window_name)
+        # if  not(detectionArret(finTrajectoire, seuil)) and arret: #si on se met à bouger, on commence une nouvelle trajectoire
+        #     #réinitialiser et initialiser les liste de tracking
+        #     finTrajectoire=[positionArret]
+        #     derniereTrajectoire=[positionArret]
+        #     arret=False
+        #     cv2.putText(imFond2,"En mouvement",(150 + width/0.77604 +200,20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+            
+        # if detectionArret(finTrajectoire, seuil) and not arret: #si on passe à l'arret, on sauvegarde la position d'arret
+        #     positionArret=realCenter
+        #     arret=True
+        #     cv2.putText(imFond2,"A l'arret",(150 + width/0.77604 +200,20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+
+        
+        
+        #sauvegarde
+        if key==ord("s") and arret:
+            trajectoiresSauvegardees.append(derniereTrajectoire)
+            
+        #passage au mode 1
+        if key==ord("r"):
+            mode=1
+            
+        
+        
+        
+    if mode == 1:
+        cv2.putText(fond2,"Selection coup",(150 + width/0.77604 + 200,20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
+        #sélection rapide avec les numéros du clavier,
+        #dans le futur: prévisualisation et sélection avec des flèches
+    
+    
+    cv2.imshow(window_name,fond2)
     
     if key==ord('q'): # quitter avec 'q'
         cv2.destroyAllWindows()
