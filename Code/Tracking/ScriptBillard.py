@@ -7,6 +7,17 @@ Created on Tue Mar  1 16:57:05 2022
 Script billard
 """
 
+
+"""
+screen : 3840 2160
+    ig 0 0  --> 0 0
+    id 126 1553 --> 0.0052 0.7366
+    sg 2987 104 --> 0.8146 0
+    sd 2973 1548 --> 0.7953 0.7542
+    
+    en ccl 0.77604 0.71782
+"""
+
 import ModuleTracking
 import Reconstruction3D
 import SubImMoy
@@ -16,43 +27,23 @@ import numpy as np
 import time as t
 import screeninfo
 
-# Ext : 91.5 x 51
-# Int : 80 x 39.5
 
-def onClick(event,x,y,flags,params):
-    if event==cv2.EVENT_LBUTTONDOWN:
-        print(x,y)
-        img=image.copy()
-        cv2.circle(img,(x,y),2,(255,0,0),-1)
-        cv2.putText(img,str(x)+"-"+str(y),(20,20),cv2.FONT_HERSHEY_SIMPLEX,0.75,(0,0,255),2)
-        cv2.imshow(window_name,img)
 
-def positionnerTable(dimInt,dimExt):
-    img = np.zeros((1080,1920,3))
-    color = (255,255,255)
-    bordX=45
-    bordY=10
-    corner1 = (bordX,bordY)
-    corner2 = (bordX+dimExt[0]*2,bordY+dimExt[1]*2)
-    
-    corner3= (bordX+(dimExt[0]-dimInt[0]),bordY+(dimExt[1]-dimInt[1]))
-    corner4 = (corner3[0]+dimInt[0]*2,corner3[1]+dimInt[1]*2)
-    
-    # Extérieur
-    cv2.rectangle(img,corner1,corner2,color,5)
-    # Intérieur
-    cv2.rectangle(img,corner3,corner4,color,5)
+
+def positionnerTable(w,h):
+    print("Veuillez positioner l'intérieur de la table dans le rectangle")
+    img = np.ones((h,w,3))
+    color = (0,0,0)
+    cv2.rectangle(img,(150,150),(0.77604*w,0.71782*h),color,5)
     cv2.imshow('rect',img)
 
-def affTraj(listPos,imFond):
+def affTraj(listPos,imFond,fenetre):
     imgFond=imFond.copy()
     color = (255,255,255)
     thickness = 5
     for i in range (len(listPos)-1):
         cv2.line(imgFond,listPos[i],listPos[i+1],color,thickness)
-    #cv2.namedWindow("Projection", cv2.WND_PROP_FULLSCREEN)          
-    #cv2.setWindowProperty("Projection", cv2.WND_PROP_FULLSCREEN, cv2.CV_WINDOW_FULLSCREEN)
-    cv2.imshow('Projection',imgFond)
+    cv2.imshow(fenetre,imgFond)
     
 def getCoordProjection(coord):
     
@@ -76,34 +67,19 @@ epaisseurBord = 55
 diametre = 61.5
 
 hg,imgFond = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
-imgFondRotated = cv2.rotate(imgFond,cv2.ROTATE_90_CLOCKWISE)
-imgFondResized = cv2.resize(imgFondRotated,(1080,1920),interpolation = cv2.INTER_NEAREST)
+
 
 
 screen = screeninfo.get_monitors()[0]
-height,width = np.shape(imgFondRotated)
-image = imgFondRotated
-#image = np.ones((height, width, 3), dtype=np.float32)
-image[:10, :10] = 0  # black at top-left corner
-image[height - 10:, :10] = [1, 0, 0]  # blue at bottom-left
-image[:10, width - 10:] = [0, 1, 0]  # green at top-right
-image[height - 10:, width - 10:] = [0, 0, 1] 
-
+height,width = screen.height,screen.width
+positionnerTable(width, height)
+fond = np.ones((height,width,3))
 window_name = 'projector'
 cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-cv2.setMouseCallback(window_name,onClick)
-cv2.imshow(window_name, image)
-
-while (True):
-    k=cv2.waitKey(1)
-    if k == ord('q'):
-        break
-
-"""
-
+#cv2.imshow(window_name, image)
 
 
 
@@ -151,10 +127,8 @@ while True:
             listTimeAdd.pop(0)
         
         
-        affTraj(np.array(listPosProj))
+        affTraj(np.array(listPosProj,fond,window_name))
     
     if key==ord('q'): # quitter avec 'q'
         break
 
-
-  """  
