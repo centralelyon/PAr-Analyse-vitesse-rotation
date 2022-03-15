@@ -118,10 +118,10 @@ def getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre
         homography = translate.dot(h)
     else:
         print("Erreur, on recommence")
-        getHomographyForBillard(camera, upper, lower, dimensions, epaisseurBord, diametre)
+        homography = getHomographyForBillard(camera, upper, lower, dimensions, epaisseurBord, diametre)
+        return homography
     
-    
-    # Juste pour vérification, à supprimer après
+    # Vérification par l'utilisateur que tout a bien fonctionné
     print("Retirez la boule puis validez avec la barre d'espace ou la touche entrée")
     while True:
         key = cv2.waitKey(1)
@@ -130,12 +130,28 @@ def getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre
         if key==ord(' ') or key==ord("\r"): # Validation par l'utilisateur
             break
     cv2.destroyAllWindows()
-    grabbed,frame = camera.read()
+    
     dim=(dimensions[0]+2*epaisseurBord,dimensions[1]+2*epaisseurBord)
     imReg = cv2.warpPerspective(frame,homography,dim)
-    #cv2.imshow('rect',imReg)
+    cv2.imshow('Image rectifiée',imReg)
+    print("L'image est-elle correctement projetée ? [y/n]")
+    isOK=True
+    while True:
+        k = cv2.waitKey(1)
+        if k==ord('y'):
+            cv2.destroyAllWindows()
+            isOK=True
+            break
+        elif k==ord('n'):
+            cv2.destroyAllWindows()
+            isOK=False
+            break
     
-    return homography,imReg
+    if not isOK:
+        homography = getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre)
+        return homography
+        
+    return homography
 
 """
 ## Détermine les coordonées réelles d'un point à partir de l'homographie calculée
