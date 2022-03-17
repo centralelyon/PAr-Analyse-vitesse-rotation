@@ -29,50 +29,7 @@ import screeninfo
 import json
 
 
-def positionnerTable(img,fenetre):
-    print("Veuillez positioner l'intérieur de la table dans le rectangle")
-    cv2.imshow(fenetre,img)
-    while True:
-        k = cv2.waitKey(1)
-        if k ==ord('q'):
-            cv2.destroyAllWindows()
-            break
 
-def affTraj(listPos,imFond,fenetre):
-    color = (0,0,0)
-    for i in range (len(listPos)-1):
-        cv2.line(imFond,listPos[i],listPos[i+1],color,5)
-        
-def affTrajPrevis(listPos,imFond,fenetre):
-    color = (0,0,0)
-    for i in range (len(listPos)):
-        cv2.circle(imFond,(listPos[i]),15,color,-1)
-    
-def getCoordProjection(coord,l,L,coin1,coin2):   
-    xreel,yreel = coord
-    #Translation de l'origine du repere dans le coin
-    x2 = xreel+l/2
-    y2 = yreel+L/2
-    # Rotation de l'image <=> inversion des coordonees
-    x3,y3=y2,x2
-    # mise a l'echelle
-    coefX = (coin2[0]-coin1[0])/L
-    coefY = (coin2[1]-coin1[1])/l
-    x4=coin1[0]+int(round(x3*coefX))
-    y4=coin1[1]+int(round(y3*coefY))
-    #print(x4,y4)
-    return (x4,y4)
-
-def detectionArret(pos,seuil): # Liste de position dont la taille a été réglée par l'ajout ponctuel de positions
-    lastPos = pos[-1]
-    nbpos = len(pos)
-    immobile = True
-    i=0
-    while immobile and i<nbpos-1:
-        if (pos[i][0]-lastPos[0])**2+(pos[i][1]-lastPos[1])**2>seuil**2:
-            immobile = False
-        i=i+1
-    return immobile
 
 
 
@@ -103,7 +60,7 @@ cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-positionnerTable(fond,window_name)
+Reconstruction3D.positionnerTable(fond,window_name)
 
 
 camera = cv2.VideoCapture(1)
@@ -179,7 +136,7 @@ while True:
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
                 
-            affTraj(np.array(listPosProj),fond2,window_name)
+            Reconstruction3D.affTraj(np.array(listPosProj),fond2,window_name)
             
             #traitement de la trajectoire à sauvegarder
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
@@ -196,7 +153,7 @@ while True:
         if arret:
             cv2.putText(fond2,"A l'arret",( coin2[0] +250,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
-            if  not(detectionArret(finTrajectoire, seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+            if  not(Reconstruction3D.detectionArret(finTrajectoire, seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
                 finTrajectoire=[positionArret]
                 derniereTrajectoire=[positionArret]
@@ -206,7 +163,7 @@ while True:
             cv2.putText(fond2,"En mouvement",( coin2[0] +250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
             #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
-            if  len(finTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
+            if  len(finTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
                 positionArret=realCenter
                 arret=True
         

@@ -179,3 +179,92 @@ def findRealCoordinatesBillard(coord,homography,dimensions,epaisseurBord):
     y = y-epaisseurBord-dimensions[1]/2
     
     return (x,y)
+
+
+"""
+## Affiche l'image de fond (rectangle noir) pour que l'utilisateur positionne la table
+
+@param img : image de fond
+       fenetre : nom de la fenetre OpenCV
+"""
+def positionnerTable(img,fenetre):
+    print("Veuillez positioner l'intérieur de la table dans le rectangle")
+    cv2.imshow(fenetre,img)
+    while True:
+        k = cv2.waitKey(1)
+        if k ==ord('q'):
+            cv2.destroyAllWindows()
+            break
+
+
+"""
+## Trace la trajectoire en reliant une liste de points
+
+@param listPos : liste des positions de la bille à afficher
+       imFond : image de fond sur laquelle on trace la trajectoire
+       fenetre : nom de la fenetre OpenCV
+"""
+def affTraj(listPos,imFond,fenetre):
+    color = (0,0,0)
+    for i in range (len(listPos)-1):
+        cv2.line(imFond,listPos[i],listPos[i+1],color,5)
+
+    
+"""
+## Trace la trajectoire en pointillés
+
+@param listPos : liste des positions de la bille à afficher
+       imFond : image de fond sur laquelle on trace la trajectoire
+       fenetre : nom de la fenetre OpenCV
+"""
+def affTrajPrevis(listPos,imFond,fenetre):
+    color = (0,0,0)
+    for i in range (len(listPos)):
+        cv2.circle(imFond,(listPos[i]),15,color,-1)
+    
+
+"""
+## Transforme les coordonnées réelles en coordonées sur l'image à afficher
+@param coord : tuple des coordonnées réelles
+       l : largeur de la table de billard
+       L : longueur de la table de billard
+       coin1 : position du coin supérieur gauche de la table sur l'image de fond
+       coin2 : position du coin inférieur droit de la table sur l'image de fond
+       
+@return x4 : abscisse de la bille sur l'image projetée
+        y4 : ordonnée de la bille sur l'image projetée
+"""
+def getCoordProjection(coord,l,L,coin1,coin2):   
+    xreel,yreel = coord
+    #Translation de l'origine du repere dans le coin
+    x2 = xreel+l/2
+    y2 = yreel+L/2
+    # Rotation de l'image <=> inversion des coordonees
+    x3,y3=y2,x2
+    # mise a l'echelle
+    coefX = (coin2[0]-coin1[0])/L
+    coefY = (coin2[1]-coin1[1])/l
+    x4=coin1[0]+int(round(x3*coefX))
+    y4=coin1[1]+int(round(y3*coefY))
+    #print(x4,y4)
+    return (x4,y4)
+
+
+"""
+## Indique si la bille est en mouvement ou à l'arrêt
+
+@param pos : liste de position de la balle
+       seuil : distance maximale à la dernière position de la bille pour considérer que la bille est à l'arrêt
+
+@return immobile : booléen indiquant si la bille est arrêtée ou non
+"""
+def detectionArret(pos,seuil): # Liste de position dont la taille a été réglée par l'ajout ponctuel de positions
+    lastPos = pos[-1]
+    nbpos = len(pos)
+    immobile = True
+    i=0
+    while immobile and i<nbpos-1:
+        if (pos[i][0]-lastPos[0])**2+(pos[i][1]-lastPos[1])**2>seuil**2:
+            immobile = False
+        i=i+1
+    return immobile
