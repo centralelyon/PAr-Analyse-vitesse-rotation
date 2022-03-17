@@ -20,14 +20,13 @@ screen : 3840 2160
 
 import ModuleTracking
 import Reconstruction3D
-import SubImMoy
+
 
 import cv2
 import numpy as np
 import time as t
 import screeninfo
-
-
+import json
 
 
 def positionnerTable(img,fenetre):
@@ -49,7 +48,7 @@ def affTrajPrevis(listPos,imFond,fenetre):
     for i in range (len(listPos)):
         cv2.circle(imFond,(listPos[i]),15,color,-1)
     
-def getCoordProjection(coord,l,L,w,h):   
+def getCoordProjection(coord,l,L,coin1,coin2):   
     xreel,yreel = coord
     #Translation de l'origine du repere dans le coin
     x2 = xreel+l/2
@@ -57,10 +56,10 @@ def getCoordProjection(coord,l,L,w,h):
     # Rotation de l'image <=> inversion des coordonees
     x3,y3=y2,x2
     # mise a l'echelle
-    coefX = (w*0.77604-150)/L
-    coefY = (h*0.71782-150)/l
-    x4=150+int(round(x3*coefX))
-    y4=150+int(round(y3*coefY))
+    coefX = (coin2[0]-coin1[0])/L
+    coefY = (coin2[1]-coin1[1])/l
+    x4=coin1[0]+int(round(x3*coefX))
+    y4=coin1[1]+int(round(y3*coefY))
     #print(x4,y4)
     return (x4,y4)
 
@@ -73,19 +72,32 @@ def detectionArret(pos,seuil): # Liste de position dont la taille a été régl�
         if (pos[i][0]-lastPos[0])**2+(pos[i][1]-lastPos[1])**2>seuil**2:
             immobile = False
         i=i+1
-    return immobile  
+    return immobile
 
 
 
-# Script d'éxécution pour le billard : on trouve l'homographie et on affiche la camera avec les deux coordonées
+# # Script d'éxécution pour le billard  # #
+# On place le billard par rapport au vidéoprojecteur (rectangle)
+# On trouve l'homographie entre le plan de la caméra et les coordonées réelles
+# On projete en temps réel la position de la balle et on laisse la possibilité de rejouer un coup
+
+
+# Récupération de tout les paramètres
+
+with open('AllData.json') as file:
+    allData = json.load(file) # allData est un dictionnnaire contenant tout les paramètres.
+
+
 
 screen = screeninfo.get_monitors()[0]
 height,width = screen.height,screen.width
+coin1 = (150,150)
+coin2 = (int(allData["coefRectangleX2"]*width),int(allData["coefRectangleY2"]*height))
 fond = np.ones((height,width,3))
-fond = cv2.rectangle(fond,(150,150),(int(0.77604*width),int(0.71782*height)),(0,0,0),5)
+fond = cv2.rectangle(fond,coin1,coin2,(0,0,0),5)
 
 
-
+# Full screen et affiché par dessus les autres fenêtres dès le début
 window_name = 'projector'
 cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
@@ -95,13 +107,24 @@ positionnerTable(fond,window_name)
 
 
 camera = cv2.VideoCapture(1)
-upper,lower,zero = ModuleTracking.getParameters(10) # 10  : billard sans soustraction
-largeur = 395
-longueur = 800
-epaisseurBord = 55
-diametre = 61.5
+upper,lower = allData["upperBornRed"], allData["lowerBornRed"]
+largeur = allData["largeurBillard"]
+longueur = allData["longueurBillard"]
+epaisseurBord = allData["epaisseurBordBillard"]
+diametre = allData["diametreBille"]
 
-hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
+isOK=False
+
+while not isOK:
+    answer = input("Voulez vous utiliser la matrice d'homographie sauvegardée ou alors la déterminer à nouveau ? [y/n]")
+    if answer=="y":
+        hg = np.array(allData["homography"])
+        isOk = True
+    elif answer=="n":
+        hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
+        allData["homography"] = hg
+        isOk=True
+        
 
 
 #redéfinition car cv2.destroyAllWIndows dans positionnerTable a supprimé les propriétés
@@ -116,11 +139,11 @@ cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN
 listPos=[]
 listPosProj=[]
 listTimeAdd=[]
-tempsTrace = 3
+tempsTrace = allData["tpsTraceTrajectoire"]
 
-tempsAjoutTrajectoire=0.2 #pour la sauvegarde de trajectoire et la détection d'arret, on regarde toutes les 0.2 sec
-tempsDetectionArret=2 #critère d'arret: 2 sec immobile
-seuil = 10 #critère d'arret: pas de variation de + de 10 mm
+tempsAjoutTrajectoire=allData["tpsAjoutTrajectoire"] #pour la sauvegarde de trajectoire et la détection d'arret, on regarde toutes les 0.2 sec
+tempsDetectionArret=allData["tpsArret"] #critère d'arret: 2 sec immobile
+seuil = allData["seuilArret"] #critère d'arret: pas de variation de + de 10 mm
 
 
 instantDernierAjout=t.time()
@@ -148,17 +171,17 @@ while True:
             realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
                     
             listPosProj.append(getCoordProjection(realCenter,largeur,longueur,width,height))
-            listTimeAdd.append(t.time())
             currentTime = t.time()
-            
+            listTimeAdd.append(currentTime)
+
             #traitement de la trajectoire à tracer: 
             if (currentTime-listTimeAdd[0]>tempsTrace):
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
-            
+                
             affTraj(np.array(listPosProj),fond2,window_name)
             
-            #traitement de la trajectoire à sauvegarder, détection de l'arret
+            #traitement de la trajectoire à sauvegarder
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
                 instantDernierAjout=t.time()
                 
@@ -171,7 +194,8 @@ while True:
         
         #detection arret
         if arret:
-            cv2.putText(fond2,"A l'arret",( int(width*0.77604) +250,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
+            cv2.putText(fond2,"A l'arret",( coin2[0] +250,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
+            # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
             if  not(detectionArret(finTrajectoire, seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
                 finTrajectoire=[positionArret]
@@ -179,26 +203,12 @@ while True:
                 arret=False
     
         else:
-            cv2.putText(fond2,"En mouvement",( int(width*0.77604) +250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            cv2.putText(fond2,"En mouvement",( coin2[0] +250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
             #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
             if  len(finTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
                 positionArret=realCenter
                 arret=True
-        
-        
-        # if  not(detectionArret(finTrajectoire, seuil)) and arret: #si on se met à bouger, on commence une nouvelle trajectoire
-        #     #réinitialiser et initialiser les liste de tracking
-        #     finTrajectoire=[positionArret]
-        #     derniereTrajectoire=[positionArret]
-        #     arret=False
-        #     cv2.putText(imFond2,"En mouvement",(150 + width/0.77604 +200,20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 255, 0), 2)
-            
-        # if detectionArret(finTrajectoire, seuil) and not arret: #si on passe à l'arret, on sauvegarde la position d'arret
-        #     positionArret=realCenter
-        #     arret=True
-        #     cv2.putText(imFond2,"A l'arret",(150 + width/0.77604 +200,20),cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
-
-        
         
         #sauvegarde
         if key==ord("s") and arret:
@@ -212,7 +222,8 @@ while True:
         
         
     if mode == 1:
-        cv2.putText(fond2,"Selection coup",( int(width*0.77604)+250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
+        cv2.putText(fond2,"Selection coup",( coin2[0]+250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
+        # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
         #sélection rapide avec les numéros du clavier,
         #dans le futur: prévisualisation et sélection avec des flèches
     
@@ -223,3 +234,8 @@ while True:
         cv2.destroyAllWindows()
         break
 
+
+# Sauvegarde d'éventuelles modifications des paramètres de AllData
+with open('AllData.json', 'w') as file:
+	json.dump(allData, file)
+    

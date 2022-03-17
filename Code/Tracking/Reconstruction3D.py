@@ -20,6 +20,7 @@ def loadDistortionData():
     dist = distorsionData['dist']
     return mtx,dist
 
+
 """
 ## Dé-distord l'image en utilisant les paramètres de la caméra et la redimensionne
 
@@ -35,6 +36,7 @@ def distCorrection(frame,mtx,dist,newMtx,roi):
     x, y, w, h = roi
     frameRect = frameRect[y:y+h, x:x+w]
     return frameRect
+
 
 """
 ## Renvoie - après validation par l'utilisateur - la position d'une bille placée dans un des coins de la table de billard par l'utilisateur.
@@ -85,6 +87,7 @@ def addPoint(camera,upper,lower,location):
             break
     cv2.destroyAllWindows()
     return center
+
 
 """
 ## Trouve une homographie entre le plan de l'image de la caméra et une vue de dessus de la table de billard
@@ -152,6 +155,7 @@ def getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre
         return homography
         
     return homography
+
 
 """
 ## Détermine les coordonées réelles d'un point à partir de l'homographie calculée

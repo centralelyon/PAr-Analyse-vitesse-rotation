@@ -1,6 +1,21 @@
 {
-
-	"homography" : [[1, 1, 1], [1, 2, 1], [1, 1, 1]]
-
+	"coefRectangleX1" : 0.02604,
+	"coefRectangleY1" : 0.04630,
+	"coefRectangleX2" : 0.77604,
+	"coefRectangleY2" : 0.71782,
+	"upperBornRed" : (9, 255, 255),
+	"lowerBornRed" : (0, 154, 197),
+	"largeurBillard" : 395,
+	"longueurBillard" : 800,
+	"epaisseurBordBillard" : 55,
+	"diametreBille" : 61.5,
+	"homography" : [[1, 1, 1], [1, 2, 1], [1, 1, 1]],
+	"tpsTraceTrajectoire" : 3,
+	"tpsAjoutTrajectoire" : 0.2,
+	"tpsArret" : 2,
+	"seuilArret" : 10,
+	"coeftextInfoX" : 0.81771,
+	"coeftextMoovY" : 0.20833,
+	"coeftextCmdY" : 0.77037,
 
 }
