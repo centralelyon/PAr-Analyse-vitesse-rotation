@@ -39,13 +39,14 @@ import json
 # On projete en temps réel la position de la balle et on laisse la possibilité de rejouer un coup
 
 
-# Récupération de tout les paramètres
+## Phase préparatoire du programme
 
+# Récupération de tout les paramètres
 with open('AllData.json') as file:
     allData = json.load(file) # allData est un dictionnnaire contenant tout les paramètres.
 
 
-
+# Création de l'image de fond affichée par le vidéo projecteur
 screen = screeninfo.get_monitors()[0]
 height,width = screen.height,screen.width
 coin1 = (150,150)
@@ -63,80 +64,83 @@ cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
 Reconstruction3D.positionnerTable(fond,window_name)
 
 
-camera = cv2.VideoCapture(1)
-upper,lower = allData["upperBornRed"], allData["lowerBornRed"]
+# Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
+camera = cv2.VideoCapture(0)
+upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
+lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
 longueur = allData["longueurBillard"]
 epaisseurBord = allData["epaisseurBordBillard"]
 diametre = allData["diametreBille"]
-
 isOK=False
-
 while not isOK:
-    answer = input("Voulez vous utiliser la matrice d'homographie sauvegardée ou alors la déterminer à nouveau ? [y/n]")
+    answer = input("Voulez vous utiliser la matrice d'homographie sauvegardée ou alors la déterminer à nouveau ? [y/n] \t")
     if answer=="y":
         hg = np.array(allData["homography"])
-        isOk = True
+        isOK = True
     elif answer=="n":
         hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
         allData["homography"] = hg
-        isOk=True
+        isOK=True
         
 
 
-#redéfinition car cv2.destroyAllWIndows dans positionnerTable a supprimé les propriétés
+#redéfinition car cv2.destroyAllWIndows() dans positionnerTable a supprimé les propriétés
 window_name = 'projector'
 cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 #cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
 
+## Phase nominale du programme
 
+# Variable du tracé de la trajectoire
+listPosProj=[] # Liste des position de la bille
+listTimeAdd=[] # Liste des instants d'ajouts des éléments à listPosProj
+tempsTrace = allData["tpsTraceTrajectoire"] # Temps qu'un point de la trajectoire reste affiché
 
-listPos=[]
-listPosProj=[]
-listTimeAdd=[]
-tempsTrace = allData["tpsTraceTrajectoire"]
+# Variables de l'enregistrement de la trajectoire
+tempsAjoutTrajectoire=allData["tpsAjoutTrajectoire"] # Délai entre l'enregistrement de deux positions pour la trajectoire sauvegardée
+derniereTrajectoire=[] # Liste des positions de la trajectoire en cours d'aquisition, un ajout est fait toute les tempsAjoutTrajectoire secondes.
+trajectoiresSauvegardees=[] # Liste des trajectoires sauvegardées
 
-tempsAjoutTrajectoire=allData["tpsAjoutTrajectoire"] #pour la sauvegarde de trajectoire et la détection d'arret, on regarde toutes les 0.2 sec
-tempsDetectionArret=allData["tpsArret"] #critère d'arret: 2 sec immobile
-seuil = allData["seuilArret"] #critère d'arret: pas de variation de + de 10 mm
+# Variables pour la détection de l'arrêt de la bille
+finTrajectoire=[] # Liste des dernières positions de la trajectoire en cours d'aquisition, un ajout est fait toute les tempsAjoutTrajectoire secondes.
+tempsDetectionArret=allData["tpsArret"] # Temps d'immobilité nécessaie pour que l'arrêt soit détecté
+seuil = allData["seuilArret"] #Déplacement maximal pour que la balle soit définie comme à l'arrêt
+arret=False # Booléen indiquant si la bille est à l'arrêt
+positionArret=(0,0) # Position de la bille à l'arrêt
 
+# Rq : l'intérêt de fin trajectoire ? On ne peux pas mettre derniereTrajectoire[-tempsDetectionArret/tempsAjoutTrajectoire:]
 
 instantDernierAjout=t.time()
-derniereTrajectoire=[] #enregistre complètement la dernière trajectoire, chaque tempsAjoutTrajectoire
-finTrajectoire=[] #enregistre les dernières positions de la trajectoire, chaque tempsAjoutTrajectoire
-trajectoiresSauvegardees=[]
-arret=False
-positionArret=(0,0)
-
-mode = 0
-
+mode = 0  # Mode de fonctionnement du programe
 
 while True:
-    key = cv2.waitKey(1)
-    fond2 = fond.copy()
+    key = cv2.waitKey(1) # Lecture d'interraction clavier par l'utilisateur
+    fond2 = fond.copy() # Copie de l'image de fond générique, qui sera modifiée si l'on doit afficher de nouvelles choses
     
     
     if mode == 0:
-        grabbed,frame = camera.read()
+        grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
         
-        center = ModuleTracking.trackingBillard(frame,upper,lower)
+        center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
         
         if center !=None:
-            #Caméra
+            # Obtention des coordonnées "réeles" grâce à l'homographie
             realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
-                    
-            listPosProj.append(getCoordProjection(realCenter,largeur,longueur,width,height))
+            
+            # Ajout à la liste des positions de la trajectoire à tracer
+            listPosProj.append(Reconstruction3D.getCoordProjection(realCenter,largeur,longueur,coin1,coin2))
             currentTime = t.time()
             listTimeAdd.append(currentTime)
 
-            #traitement de la trajectoire à tracer: 
+            #traitement de la trajectoire à tracer : effacement après tempsTrace secondes 
             if (currentTime-listTimeAdd[0]>tempsTrace):
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
-                
-            Reconstruction3D.affTraj(np.array(listPosProj),fond2,window_name)
+            # Affichage de la trajectoire sur l'image de fond   
+            Reconstruction3D.affTraj(listPosProj,fond2,window_name)
             
             #traitement de la trajectoire à sauvegarder
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
