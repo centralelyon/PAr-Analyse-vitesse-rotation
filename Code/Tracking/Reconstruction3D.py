@@ -204,7 +204,7 @@ def positionnerTable(img,fenetre):
        imFond : image de fond sur laquelle on trace la trajectoire
        fenetre : nom de la fenetre OpenCV
 """
-def affTraj(listPos,imFond,fenetre):
+def affTraj(listPos,imFond):
     color = (0,0,0)
     for i in range (len(listPos)-1):
         cv2.line(imFond,listPos[i],listPos[i+1],color,5)

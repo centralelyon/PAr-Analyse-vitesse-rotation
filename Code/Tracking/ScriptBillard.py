@@ -152,7 +152,7 @@ while True:
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
             # Affichage de la trajectoire sur l'image de fond   
-            Reconstruction3D.affTraj(listPosProj,fond2,window_name)
+            Reconstruction3D.affTraj(listPosProj,fond2)
             
             #traitement de la trajectoire à sauvegarder
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
@@ -201,21 +201,97 @@ while True:
         if key==ord("s") and arret:
             trajectoiresSauvegardees.append(derniereTrajectoire)
             
-        #passage au mode 1
-        if key==ord("r"):
+        #passage au mode 1 uniquement si on a des trajectoires enregistrées
+        if key==ord("r") and len(trajectoiresSauvegardees):
             mode=1
+            
+        cv2.imshow(window_name,fond2)
             
         
         
         
-    if mode == 1:
+    if mode == 1:   
+        
+        #listeOrdChiffres=[ord(str(i+1)) for i in range(9)] #chiffres de 1 à 9
+        # 1 <-> 49 / 2 <-> 50 / 9 <-> 57
+        
         cv2.putText(fond2,"Selection coup",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
-        # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
-        #sélection rapide avec les numéros du clavier,
-        #dans le futur: prévisualisation et sélection avec des flèches
+
+        #affichage des boutons
+        for i in range(len(trajectoiresSauvegardees)):
+            #trouver coeff à la place de 200
+            cv2.putText(fond2,str(i+1),(int(allData["coeftextInfoX"]*width + 50 * i ),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (100, 100, 100), 2)
+        
+        
+        #sauvegarde du fond (modification si changement de traj à visualiser)
+        fond3 = fond2.copy()
+        
+        #initialisation de la séléction
+        indTrajSelectionnee=0   
+        cv2.putText(fond2,"1",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 0, 255), 2)
+        Reconstruction3D.affTraj(trajectoiresSauvegardees[0],fond2,window_name)
+        
+        
+        
+        
+        cv2.imshow(window_name,fond3)
+            
+        while True:
+            key=cv2.waitKey(1)
+            
+            if key ==ord("\n"): #enter
+                mode=2
+                #supprimer background?
+                break
+            
+            if key == 27: #echap
+                mode=0
+                break
+            
+            if 49 <= key <= 49+len(trajectoiresSauvegardees)-1:
+                #réinitialisation de l'image 
+                fond2=fond3.copy()
+                
+                #actualisation de la selection
+                indTrajSelectionnee = key - 48 - 1 #le chiffre appuyé est -48, l'indice de la liste est -49
+                
+                #tracer le chiffre selectionné en couleur, afficher la trajectoire
+                cv2.putText(fond2,str(indTrajSelectionnee+1),(int(allData["coeftextInfoX"]*width + 50 * indTrajSelectionnee ),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 0, 255), 2)
+                Reconstruction3D.affTraj(trajectoiresSauvegardees[0])
+                
+                cv2.imshow(window_name,fond2)
+        
     
+        
+    if mode==2:
+        #fond: selection du mode.
+        #effacer chiffres selection du mode 3
+        
+        #afficher la position de la balle  en pointillés
+        
+        #fond 3= fond
+        
+        
+        
+        #lancer le tracking: while key!=echap and balle pas au bon endroit et ca fait pas 3 sec
+            #getkey
+            
+            #si abs(centretrack - centrepos )<eps
+                #flag=1
+                #instantflag=t.time
+                
+            #si c'est dedans: on épaissit le trait
+            
+        #si echap:
+            #mode 1, reset graphique
+            
+        #sinon:
+            #mode 3, reset graphique
+        
+            
+        pass
     
-    cv2.imshow(window_name,fond2)
+            
     
     if key==ord('q'): # quitter avec 'q'
         cv2.destroyAllWindows()
