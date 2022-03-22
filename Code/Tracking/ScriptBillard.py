@@ -77,7 +77,7 @@ Reconstruction3D.positionnerTable(fond,window_name)
 
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -92,7 +92,14 @@ while not isOK:
         isOK = True
     elif answer=="n":
         hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
-        allData["homography"] = hg
+        l4 = [list(e) for e in hg]
+        l5=[]
+        for i in range(len(l4)):
+            ltemp=[]
+            for j in range(len(l4[i])):
+                ltemp.append(l4[i][j].item()) # conversion int32 to int
+            l5.append(ltemp)
+        allData["homography"] = l5
         isOK=True
         
 
@@ -152,12 +159,11 @@ while True:
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
             # Affichage de la trajectoire sur l'image de fond   
-            Reconstruction3D.affTraj(listPosProj,fond2)
+            Reconstruction3D.affTraj(listPosProj,fond2,window_name)
             
             #traitement de la trajectoire à sauvegarder
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
                 instantDernierAjout=currentTime
-                
                 derniereTrajectoire.append(realCenter)
  
         
@@ -179,18 +185,18 @@ while True:
                 arret=True
         
         # Détection rebond
-        if len(derniereTrajectoire)>1:
-            if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
-                # On détecte un rebond
-                print("Rebond")
-                cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+        # if len(derniereTrajectoire)>1:
+        #     if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
+        #         # On détecte un rebond
+        #         print("Rebond")
+        #         cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             
         
         
         # Calcul et affichage vitesse
         if len(derniereTrajectoire)>1:
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
-            cv2.putText(fond2,"Vitesse : \n"+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             derniereVitesse.append(vitesseBille)
             if len(derniereVitesse)>5:
                 derniereVitesse.pop(0)
