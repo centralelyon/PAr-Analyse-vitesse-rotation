@@ -8,16 +8,6 @@ Script billard
 """
 
 
-"""
-screen : 3840 2160
-    ig 0 0  --> 0 0
-    id 126 1553 --> 0.0052 0.7366
-    sg 2987 104 --> 0.8146 0
-    sd 2973 1548 --> 0.7953 0.7542
-    
-    en ccl 0.77604 0.71782
-"""
-
 import ModuleTracking
 import Reconstruction3D
 
@@ -27,6 +17,7 @@ import numpy as np
 import time as t
 import screeninfo
 import json
+
 
 
 
@@ -95,7 +86,7 @@ cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN
 ## Phase nominale du programme
 
 # Variable du tracé de la trajectoire
-listPosProj=[] # Liste des position de la bille
+listPosProj=[] # Liste des position de la bille à projeter
 listTimeAdd=[] # Liste des instants d'ajouts des éléments à listPosProj
 tempsTrace = allData["tpsTraceTrajectoire"] # Temps qu'un point de la trajectoire reste affiché
 
@@ -105,13 +96,13 @@ derniereTrajectoire=[] # Liste des positions de la trajectoire en cours d'aquisi
 trajectoiresSauvegardees=[] # Liste des trajectoires sauvegardées
 
 # Variables pour la détection de l'arrêt de la bille
-finTrajectoire=[] # Liste des dernières positions de la trajectoire en cours d'aquisition, un ajout est fait toute les tempsAjoutTrajectoire secondes.
 tempsDetectionArret=allData["tpsArret"] # Temps d'immobilité nécessaie pour que l'arrêt soit détecté
 seuil = allData["seuilArret"] #Déplacement maximal pour que la bille soit définie comme à l'arrêt
 arret=False # Booléen indiquant si la bille est à l'arrêt
 positionArret=(0,0) # Position de la bille à l'arrêt
-
-# Rq : l'intérêt de fin trajectoire ? On ne peux pas mettre derniereTrajectoire[-tempsDetectionArret/tempsAjoutTrajectoire:]
+vitesseBille = (0,0) # Vitesse de la bille
+prochainePosition = (0,0) # Position probable de la bille sur la prochaine frame
+seuilRebond = allData["seuilRebond"] # Distance entre la position réelle et la position prévue pour que on détecte un rebond
 
 instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
@@ -147,19 +138,14 @@ while True:
                 instantDernierAjout=currentTime
                 
                 derniereTrajectoire.append(realCenter)
-                finTrajectoire.append(realCenter) 
-                
-                if len(finTrajectoire)>=tempsDetectionArret/tempsAjoutTrajectoire: #la détection de l'arret ne se fait que sur la fin de la trajectoire
-                    finTrajectoire.pop(0)
-                    
+ 
         
         #detection arret
         if arret:
             cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
-            if  not(Reconstruction3D.detectionArret(finTrajectoire, seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+            if  not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
-                finTrajectoire=[positionArret]
                 derniereTrajectoire=[positionArret]
                 arret=False
     
@@ -167,9 +153,30 @@ while True:
             cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
             #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
-            if  len(finTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
+            if  len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): #si on passe à l'arret, on sauvegarde la position d'arret
                 positionArret=realCenter
                 arret=True
+        
+        # Détection rebond
+        if len(derniereTrajectoire)>1:
+            print(prochainePosition)
+            print(realCenter)
+            print((prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2)
+            print('\n')
+            if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
+                # On détecte un rebond
+                 cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            
+        
+        
+        # Calcul et affichage vitesse
+        if len(derniereTrajectoire)>1:
+            vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
+            cv2.putText(fond2,"Vitesse : \n"+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            prochainePosition= (derniereTrajectoire[-1][0]+vitesseBille[0]*tempsAjoutTrajectoire,derniereTrajectoire[-1][1]+vitesseBille[1]*tempsAjoutTrajectoire)
+            
+        
+        
         
         #sauvegarde
         if key==ord("s") and arret:
