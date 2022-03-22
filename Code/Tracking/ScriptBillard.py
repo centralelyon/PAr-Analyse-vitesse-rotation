@@ -144,22 +144,26 @@ while True:
         if arret:
             cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
-            if  not(Reconstruction3D.detectionArret(derniereTrajectoire[-tempsDetectionArret/tempsAjoutTrajectoire:] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+            if  not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
                 derniereTrajectoire=[positionArret]
                 arret=False
     
         else:
-            cv2.putText(fond2,"En mouvement",int((allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
             #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
-            if  len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[-tempsDetectionArret/tempsAjoutTrajectoire:], seuil): #si on passe à l'arret, on sauvegarde la position d'arret
+            if  len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): #si on passe à l'arret, on sauvegarde la position d'arret
                 positionArret=realCenter
                 arret=True
         
         # Détection rebond
         if len(derniereTrajectoire)>1:
-            if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond:
+            print(prochainePosition)
+            print(realCenter)
+            print((prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2)
+            print('\n')
+            if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
                 # On détecte un rebond
                  cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             
@@ -168,7 +172,7 @@ while True:
         # Calcul et affichage vitesse
         if len(derniereTrajectoire)>1:
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
-            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            cv2.putText(fond2,"Vitesse : \n"+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             prochainePosition= (derniereTrajectoire[-1][0]+vitesseBille[0]*tempsAjoutTrajectoire,derniereTrajectoire[-1][1]+vitesseBille[1]*tempsAjoutTrajectoire)
             
         

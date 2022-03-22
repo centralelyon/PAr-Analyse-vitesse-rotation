@@ -14,6 +14,7 @@
 	"tpsAjoutTrajectoire" : 0.2,
 	"tpsArret" : 2,
 	"seuilArret" : 10,
+	"seuilRebond" : 25,
 	"coeftextInfoX" : 0.84114,
 	"coeftextMoovY" : 0.18519,
 	"coeftextCmdY" : 0.77037
