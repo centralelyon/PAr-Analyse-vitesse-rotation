@@ -92,7 +92,7 @@ while not isOK:
         isOK = True
     elif answer=="n":
         hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
-        allData["homography"] = hg
+        allData["homography"] = list(hg)
         isOK=True
         
 
@@ -137,9 +137,8 @@ while True:
         grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
         
         center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
-        
         if center !=None:
-            # Obtention des coordonnées "réeles" grâce à l'homographie
+            # Obtention des coordonnées "réelles" grâce à l'homographie
             realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
             
             # Ajout à la liste des positions de la trajectoire à tracer
@@ -151,7 +150,8 @@ while True:
             if (currentTime-listTimeAdd[0]>tempsTrace):
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
-            # Affichage de la trajectoire sur l'image de fond   
+            # Affichage de la trajectoire sur l'image de fond  
+            
             Reconstruction3D.affTraj(listPosProj,fond2)
             
             #traitement de la trajectoire à sauvegarder
@@ -179,18 +179,18 @@ while True:
                 arret=True
         
         # Détection rebond
-        if len(derniereTrajectoire)>1:
-            if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
-                # On détecte un rebond
-                print("Rebond")
-                cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+        # if len(derniereTrajectoire)>1:
+        #     if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
+        #         # On détecte un rebond
+        #         print("Rebond")
+        #         cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             
         
         
         # Calcul et affichage vitesse
         if len(derniereTrajectoire)>1:
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
-            cv2.putText(fond2,"Vitesse : \n"+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             derniereVitesse.append(vitesseBille)
             if len(derniereVitesse)>5:
                 derniereVitesse.pop(0)
@@ -199,10 +199,11 @@ while True:
         
         #sauvegarde
         if key==ord("s") and arret:
-            trajectoiresSauvegardees.append(derniereTrajectoire)
+            dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2) for c in derniereTrajectoire]
+            trajectoiresSauvegardees.append(dt)
             
         #passage au mode 1 uniquement si on a des trajectoires enregistrées
-        if key==ord("r") and len(trajectoiresSauvegardees):
+        if key==ord("r") and len(trajectoiresSauvegardees)>0:
             mode=1
             
         cv2.imshow(window_name,fond2)
@@ -210,7 +211,8 @@ while True:
         
         
         
-    if mode == 1:   
+    if mode == 1:
+        fond2=fond.copy() #on efface l'ecran .
         
         #listeOrdChiffres=[ord(str(i+1)) for i in range(9)] #chiffres de 1 à 9
         # 1 <-> 49 / 2 <-> 50 / 9 <-> 57
@@ -220,7 +222,7 @@ while True:
         #affichage des boutons
         for i in range(len(trajectoiresSauvegardees)):
             #trouver coeff à la place de 200
-            cv2.putText(fond2,str(i+1),(int(allData["coeftextInfoX"]*width + 50 * i ),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (100, 100, 100), 2)
+            cv2.putText(fond2,str(i+1),(int(allData["coeftextInfoX"]*width + 50 * i ),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 0, 0), 2)
         
         
         #sauvegarde du fond (modification si changement de traj à visualiser)
@@ -229,12 +231,13 @@ while True:
         #initialisation de la séléction
         indTrajSelectionnee=0   
         cv2.putText(fond2,"1",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 0, 255), 2)
-        Reconstruction3D.affTraj(trajectoiresSauvegardees[0],fond2,window_name)
+
+        Reconstruction3D.affTraj(trajectoiresSauvegardees[0],fond2)
         
         
         
         
-        cv2.imshow(window_name,fond3)
+        cv2.imshow(window_name,fond2)
             
         while True:
             key=cv2.waitKey(1)
@@ -250,6 +253,7 @@ while True:
             
             if 49 <= key <= 49+len(trajectoiresSauvegardees)-1:
                 #réinitialisation de l'image 
+        
                 fond2=fond3.copy()
                 
                 #actualisation de la selection
@@ -257,13 +261,14 @@ while True:
                 
                 #tracer le chiffre selectionné en couleur, afficher la trajectoire
                 cv2.putText(fond2,str(indTrajSelectionnee+1),(int(allData["coeftextInfoX"]*width + 50 * indTrajSelectionnee ),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 0, 255), 2)
-                Reconstruction3D.affTraj(trajectoiresSauvegardees[0])
+                Reconstruction3D.affTraj(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
                 
                 cv2.imshow(window_name,fond2)
         
     
         
     if mode==2:
+        mode=0
         #fond: selection du mode.
         #effacer chiffres selection du mode 3
         
@@ -290,8 +295,6 @@ while True:
         
             
         pass
-    
-            
     
     if key==ord('q'): # quitter avec 'q'
         cv2.destroyAllWindows()
