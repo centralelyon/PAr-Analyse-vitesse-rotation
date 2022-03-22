@@ -36,7 +36,7 @@ import json
 # # Script d'éxécution pour le billard  # #
 # On place le billard par rapport au vidéoprojecteur (rectangle)
 # On trouve l'homographie entre le plan de la caméra et les coordonées réelles
-# On projete en temps réel la position de la balle et on laisse la possibilité de rejouer un coup
+# On projete en temps réel la position de la bille et on laisse la possibilité de rejouer un coup
 
 
 ## Phase préparatoire du programme
@@ -107,7 +107,7 @@ trajectoiresSauvegardees=[] # Liste des trajectoires sauvegardées
 # Variables pour la détection de l'arrêt de la bille
 finTrajectoire=[] # Liste des dernières positions de la trajectoire en cours d'aquisition, un ajout est fait toute les tempsAjoutTrajectoire secondes.
 tempsDetectionArret=allData["tpsArret"] # Temps d'immobilité nécessaie pour que l'arrêt soit détecté
-seuil = allData["seuilArret"] #Déplacement maximal pour que la balle soit définie comme à l'arrêt
+seuil = allData["seuilArret"] #Déplacement maximal pour que la bille soit définie comme à l'arrêt
 arret=False # Booléen indiquant si la bille est à l'arrêt
 positionArret=(0,0) # Position de la bille à l'arrêt
 
@@ -144,7 +144,7 @@ while True:
             
             #traitement de la trajectoire à sauvegarder
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
-                instantDernierAjout=t.time()
+                instantDernierAjout=currentTime
                 
                 derniereTrajectoire.append(realCenter)
                 finTrajectoire.append(realCenter) 
