@@ -77,7 +77,7 @@ Reconstruction3D.positionnerTable(fond,window_name)
 
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -92,7 +92,14 @@ while not isOK:
         isOK = True
     elif answer=="n":
         hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
-        allData["homography"] = list(hg)
+        l4 = [list(e) for e in hg]
+        l5=[]
+        for i in range(len(l4)):
+            ltemp=[]
+            for j in range(len(l4[i])):
+                ltemp.append(l4[i][j].item()) # conversion int32 to int
+            l5.append(ltemp)
+        allData["homography"] = l5
         isOK=True
         
 
@@ -150,14 +157,13 @@ while True:
             if (currentTime-listTimeAdd[0]>tempsTrace):
                 listPosProj.pop(0)
                 listTimeAdd.pop(0)
+			
             # Affichage de la trajectoire sur l'image de fond  
-            
             Reconstruction3D.affTraj(listPosProj,fond2)
             
             #traitement de la trajectoire à sauvegarder
             if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
                 instantDernierAjout=currentTime
-                
                 derniereTrajectoire.append(realCenter)
  
         
