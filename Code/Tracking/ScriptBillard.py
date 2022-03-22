@@ -19,9 +19,30 @@ import screeninfo
 import json
 
 
+def detectionRebond(lV,seuil):
+    rebond = False
+    i=1
+    signeX = (lV[0][0]>0)
+    signeY = (lV[0][1]>0)
+    while not(rebond) and i<len(lV):
+        if (lV[i][0]>0)!=signeX: # Changement de signe de Vx
+            print('Rebond X potentiel')
+            if abs(lV[i-1][0]-lV[i][0])>seuil:
+                print('Rebond X confirme')
+                rebond=True
+            else:
+                print("Rebond X infirme")
 
-
-
+        if (lV[i][1]>0)!=signeY: # Changement de signe de Vx
+            print('Rebond Y potentiel')
+            if abs(lV[i-1][1]-lV[i][1])>seuil:
+                print('Rebond Y confirme')
+                rebond=True
+            else:
+                print("Rebond Y infirme")
+        
+        i+=1
+    return rebond
 
 
 # # Script d'éxécution pour le billard  # #
@@ -101,7 +122,7 @@ seuil = allData["seuilArret"] #Déplacement maximal pour que la bille soit défi
 arret=False # Booléen indiquant si la bille est à l'arrêt
 positionArret=(0,0) # Position de la bille à l'arrêt
 vitesseBille = (0,0) # Vitesse de la bille
-prochainePosition = (0,0) # Position probable de la bille sur la prochaine frame
+derniereVitesse = [] # Position probable de la bille sur la prochaine frame
 seuilRebond = allData["seuilRebond"] # Distance entre la position réelle et la position prévue pour que on détecte un rebond
 
 instantDernierAjout=t.time()
@@ -159,13 +180,10 @@ while True:
         
         # Détection rebond
         if len(derniereTrajectoire)>1:
-            print(prochainePosition)
-            print(realCenter)
-            print((prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2)
-            print('\n')
             if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
                 # On détecte un rebond
-                 cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+                print("Rebond")
+                cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             
         
         
@@ -173,8 +191,9 @@ while True:
         if len(derniereTrajectoire)>1:
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
             cv2.putText(fond2,"Vitesse : \n"+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-            prochainePosition= (derniereTrajectoire[-1][0]+vitesseBille[0]*tempsAjoutTrajectoire,derniereTrajectoire[-1][1]+vitesseBille[1]*tempsAjoutTrajectoire)
-            
+            derniereVitesse.append(vitesseBille)
+            if len(derniereVitesse)>5:
+                derniereVitesse.pop(0)
         
         
         
