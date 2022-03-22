@@ -42,14 +42,14 @@ import json
 ## Phase préparatoire du programme
 
 # Récupération de tout les paramètres
-with open('AllData.json') as file:
+with open("AllData.json") as file:
     allData = json.load(file) # allData est un dictionnnaire contenant tout les paramètres.
 
 
 # Création de l'image de fond affichée par le vidéo projecteur
 screen = screeninfo.get_monitors()[0]
 height,width = screen.height,screen.width
-coin1 = (150,150)
+coin1 = (int(allData["coefRectangleX1"]*width),int(allData["coefRectangleY1"]*height))
 coin2 = (int(allData["coefRectangleX2"]*width),int(allData["coefRectangleY2"]*height))
 fond = np.ones((height,width,3))
 fond = cv2.rectangle(fond,coin1,coin2,(0,0,0),5)
@@ -65,7 +65,7 @@ Reconstruction3D.positionnerTable(fond,window_name)
 
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -155,7 +155,7 @@ while True:
         
         #detection arret
         if arret:
-            cv2.putText(fond2,"A l'arret",( coin2[0] +250,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
+            cv2.putText(fond2,"A l'arret",(allData["coeftextInfoX"]*width,allData["coeftextMoovY"]*height),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
             if  not(Reconstruction3D.detectionArret(finTrajectoire, seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
@@ -164,7 +164,7 @@ while True:
                 arret=False
     
         else:
-            cv2.putText(fond2,"En mouvement",( coin2[0] +250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            cv2.putText(fond2,"En mouvement",(allData["coeftextInfoX"]*width,allData["coeftextMoovY"]*height),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
             #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
             if  len(finTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(finTrajectoire, seuil): #si on passe à l'arret, on sauvegarde la position d'arret
@@ -183,7 +183,7 @@ while True:
         
         
     if mode == 1:
-        cv2.putText(fond2,"Selection coup",( coin2[0]+250 ,400),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
+        cv2.putText(fond2,"Selection coup",(allData["coeftextInfoX"]*width,allData["coeftextMoovY"]*height),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
         #sélection rapide avec les numéros du clavier,
         #dans le futur: prévisualisation et sélection avec des flèches
