@@ -1,8 +1,8 @@
 {
-	"coefRectangleX1" : 0.02604,
-	"coefRectangleY1" : 0.04630,
-	"coefRectangleX2" : 0.77604,
-	"coefRectangleY2" : 0.71782,
+	"coefRectangleX1": 0.03906,
+	"coefRectangleY1": 0.06944,
+	"coefRectangleX2": 0.78515,
+	"coefRectangleY2": 0.74405,
 	"upperBornRed" : "(9, 255, 255)",
 	"lowerBornRed" : "(0, 154, 197)",
 	"largeurBillard" : 395,
@@ -14,8 +14,9 @@
 	"tpsAjoutTrajectoire" : 0.2,
 	"tpsArret" : 2,
 	"seuilArret" : 10,
-	"coeftextInfoX" : 0.81771,
-	"coeftextMoovY" : 0.20833,
-	"coeftextCmdY" : 0.77037,
+	"seuilRebond" : 25,
+	"coeftextInfoX" : 0.84114,
+	"coeftextMoovY" : 0.18519,
+	"coeftextCmdY" : 0.77037
 
 }
