@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+ # -*- coding: utf-8 -*-
 """
 Created on Tue Mar  1 16:57:05 2022
 
@@ -129,8 +129,10 @@ seuil = allData["seuilArret"] #Déplacement maximal pour que la bille soit défi
 arret=False # Booléen indiquant si la bille est à l'arrêt
 positionArret=(0,0) # Position de la bille à l'arrêt
 vitesseBille = (0,0) # Vitesse de la bille
-derniereVitesse = [] # Position probable de la bille sur la prochaine frame
+derniereVitesse = [] # Dernieres vitesses de la bille utilisées pour détecter le rebond
+nbVitesse = 5 # Longueur de derniereVitesse
 seuilRebond = allData["seuilRebond"] # Distance entre la position réelle et la position prévue pour que on détecte un rebond
+tpsrebond=0
 
 instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
@@ -184,13 +186,16 @@ while True:
                 positionArret=realCenter
                 arret=True
         
-        # Détection rebond
-        # if len(derniereTrajectoire)>1:
-        #     if (prochainePosition[0]-realCenter[0])**2+(prochainePosition[1]-realCenter[1])**2 > seuilRebond**2:
-        #         # On détecte un rebond
-        #         print("Rebond")
-        #         cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-            
+        #☺Détection rebond
+        if len(derniereVitesse)==nbVitesse:
+            if detectionRebond(derniereVitesse, seuilRebond):
+                print("Rebond !")
+                tpsrebond=t.time()
+        
+        # Affichage temporaire
+        if currentTime-tpsrebond>5:
+            cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+                
         
         
         # Calcul et affichage vitesse
@@ -198,7 +203,7 @@ while True:
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
             cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             derniereVitesse.append(vitesseBille)
-            if len(derniereVitesse)>5:
+            if len(derniereVitesse)>nbVitesse:
                 derniereVitesse.pop(0)
         
         
