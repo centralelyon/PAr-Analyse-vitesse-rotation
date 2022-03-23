@@ -19,28 +19,33 @@ import screeninfo
 import json
 
 
-def detectionRebond(lV,seuil):
+def detectionRebond(lV,seuil1):
     rebond = False
     i=1
-    signeX = (lV[0][0]>0)
-    signeY = (lV[0][1]>0)
+    #Signe global de la trajectoire
+    vitX = np.mean([lV[i][0] for i in range(len(lV))])
+    vitY = np.mean([lV[i][1] for i in range(len(lV))])
+    signeX = vitX>=0
+    signeY = vitY>=0
+    
     while not(rebond) and i<len(lV):
-        if (lV[i][0]>0)!=signeX: # Changement de signe de Vx
-            print('Rebond X potentiel')
+        if (lV[i][0]>=0)!=signeX: # Changement de signe de Vx
+            #print('Rebond X potentiel')
             if abs(lV[i-1][0]-lV[i][0])>seuil:
-                print('Rebond X confirme')
+                print('Rebond X confirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0])
                 rebond=True
             else:
-                print("Rebond X infirme")
+                print('Rebond X infirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0])
+                pass
 
-        if (lV[i][1]>0)!=signeY: # Changement de signe de Vx
-            print('Rebond Y potentiel')
+        if (lV[i][1]>=0)!=signeY: # Changement de signe de Vx
+            #print('Rebond Y potentiel')
             if abs(lV[i-1][1]-lV[i][1])>seuil:
-                print('Rebond Y confirme')
+                print('Rebond Y confirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1])
                 rebond=True
             else:
-                print("Rebond Y infirme")
-        
+                print('Rebond Y infirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1])
+                pass
         i+=1
     return rebond
 
@@ -77,7 +82,7 @@ Reconstruction3D.positionnerTable(fond,window_name)
 
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -133,6 +138,7 @@ derniereVitesse = [] # Dernieres vitesses de la bille utilisées pour détecter 
 nbVitesse = 5 # Longueur de derniereVitesse
 seuilRebond = allData["seuilRebond"] # Distance entre la position réelle et la position prévue pour que on détecte un rebond
 tpsrebond=0
+rebond=False
 
 instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
@@ -188,12 +194,14 @@ while True:
         
         #☺Détection rebond
         if len(derniereVitesse)==nbVitesse:
-            if detectionRebond(derniereVitesse, seuilRebond):
+            if detectionRebond(derniereVitesse,seuilRebond):
                 print("Rebond !")
+                rebond=True
                 tpsrebond=t.time()
         
         # Affichage temporaire
-        if currentTime-tpsrebond>5:
+        if rebond and currentTime-tpsrebond<1.5:
+            
             cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
                 
         
