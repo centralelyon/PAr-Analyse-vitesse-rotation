@@ -182,18 +182,47 @@ def findRealCoordinatesBillard(coord,homography,dimensions,epaisseurBord):
 
 
 """
+## Redimensionne un rectangle sur les clics souris
+"""
+def drawRectangle(event,x,y,flags,params):
+    if event==cv2.EVENT_LBUTTONDOWN:
+        print(x,y)
+        if params[2]==1:
+            cv2.rectangle(params[3],params[0],params[1],(255,255,255),5)
+            params[0]= (x,y)
+            params[2]=2
+            cv2.rectangle(params[3],params[0],params[1],(0,0,0),5)
+            cv2.imshow(params[4],params[3])
+        else:
+            cv2.rectangle(params[3],params[0],params[1],(255,255,255),5)
+            params[1] = (x,y)
+            params[2]=3
+            cv2.rectangle(params[3],params[0],params[1],(0,0,0),5)
+            cv2.imshow(params[4],params[3])
+
+"""
 ## Affiche l'image de fond (rectangle noir) pour que l'utilisateur positionne la table
 
 @param img : image de fond
        fenetre : nom de la fenetre OpenCV
 """
-def positionnerTable(img,fenetre):
+def positionnerTable(img,fenetre,coin1,coin2):
     print("Veuillez positioner l'intérieur de la table dans le rectangle")
+    img = cv2.rectangle(img,coin1,coin2,(0,0,0),5)
     cv2.imshow(fenetre,img)
     while True:
         k = cv2.waitKey(1)
+        if k==ord('r'): # On veut changer les dimensions du rectangle
+            
+            params=[coin1,coin2,1,img,fenetre]
+            cv2.setMouseCallback(fenetre,drawRectangle,params)
+            while params[2]<3:
+                c = cv2.waitKey(1)
+            cv2.setMouseCallback(fenetre, lambda *args : None)
+            coin1=params[0]
+            coin2=params[1]
+            img = params[3]
         if k ==ord('q'):
-            cv2.destroyAllWindows()
             break
 
 
@@ -248,6 +277,30 @@ def getCoordProjection(coord,l,L,coin1,coin2):
     y4=coin1[1]+int(round(y3*coefY))
     #print(x4,y4)
     return (x4,y4)
+
+
+"""
+## Transforme les coordonées sur l'image à afficher en coordonnées réelles
+@param coord : tuple des coordonnées sur l'image à afficher'
+       l : largeur de la table de billard
+       L : longueur de la table de billard
+       coin1 : position du coin supérieur gauche de la table sur l'image de fond
+       coin2 : position du coin inférieur droit de la table sur l'image de fond
+       
+@return xreel : abscisse de la bille dans le repère réel
+        yreel : ordonnée de la bille dans le repère réel
+"""
+def getInvCoordProjection(coord,l,L,coin1,coin2):
+    x4,y4 = coord
+    coefX = (coin2[0]-coin1[0])/L
+    coefY = (coin2[1]-coin1[1])/l
+    x3 = (x4-coin1[0])/coefX
+    y3 = (y4-coin1[1])/coefY
+    xreel = y3-l/2
+    yreel = x3-L/2
+
+    return (xreel,yreel)
+
 
 
 """

@@ -69,7 +69,7 @@ height,width = screen.height,screen.width
 coin1 = (int(allData["coefRectangleX1"]*width),int(allData["coefRectangleY1"]*height))
 coin2 = (int(allData["coefRectangleX2"]*width),int(allData["coefRectangleY2"]*height))
 fond = np.ones((height,width,3))
-fond = cv2.rectangle(fond,coin1,coin2,(0,0,0),5)
+
 
 
 # Full screen et affiché par dessus les autres fenêtres dès le début
@@ -78,11 +78,14 @@ cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-Reconstruction3D.positionnerTable(fond,window_name)
+Reconstruction3D.positionnerTable(fond,window_name,coin1,coin2)
 
+fond2 = fond.copy()
+cv2.putText(fond2," Veuillez patienter, la caméra se connecte...",(coin1[0],int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+cv2.imshow(window_name,fond2)
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -90,6 +93,8 @@ longueur = allData["longueurBillard"]
 epaisseurBord = allData["epaisseurBordBillard"]
 diametre = allData["diametreBille"]
 isOK=False
+
+cv2.destroyAllWindows()
 while not isOK:
     answer = input("Voulez vous utiliser la matrice d'homographie sauvegardée ou alors la déterminer à nouveau ? [y/n] \t")
     if answer=="y":
@@ -209,7 +214,7 @@ while True:
         # Calcul et affichage vitesse
         if len(derniereTrajectoire)>1:
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
-            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 200, 0), 2)
             derniereVitesse.append(vitesseBille)
             if len(derniereVitesse)>nbVitesse:
                 derniereVitesse.pop(0)
@@ -287,32 +292,58 @@ while True:
     
         
     if mode==2:
-        mode=0
+        # On reprend le fond de base
+        fond2=fond.copy()
         #fond: selection du mode.
         #effacer chiffres selection du mode 3
+        cv2.putText(fond2,"Placez la bille",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
+        cv2.putText(fond2,"à l'endroit indiqué",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         
         #afficher la position de la balle  en pointillés
+        posIni = trajectoiresSauvegardees[indTrajSelectionnee][0]
+        cv2.circle(fond2,posIni,6,(0,100,100),3,cv2.LINE_AA)
         
         #fond 3= fond
-        
-        
-        
+        #fond3 = fond2.copy()
+        distanceMin=5
+        posIniReel = Reconstruction3D.getInvCoordProjection(posIni,largeur,longueur,coin1,coin2)
         #lancer le tracking: while key!=echap and balle pas au bon endroit et ca fait pas 3 sec
+        balleNonPlace = True
+        instantflag = t.time()
+        while balleNonPlace or t.time()-instantflag<3:
             #getkey
+            key = cv2.waitKey(1)
             
-            #si abs(centretrack - centrepos )<eps
-                #flag=1
-                #instantflag=t.time
+            grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
+            center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
+            if center !=None:
+                realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
                 
-            #si c'est dedans: on épaissit le trait
-            
-        #si echap:
-            #mode 1, reset graphique
-            
-        #sinon:
-            #mode 3, reset graphique
         
             
+                #si abs(centretrack - centrepos )<eps
+                    #flag=1
+                    #instantflag=t.time
+                if (realCenter[0]-posIniReel[0])**2 + (realCenter[1]-posIniReel[1])**2 <= distanceMin**2:
+                    balleNonPlace = False
+                    instantflag = t.time()
+                    #si c'est dedans: on épaissit le trait
+                    cv2.circle(fond2,posIni,8,(0,100,100),3,cv2.LINE_AA)
+            
+            #si echap:
+            #mode 1, reset graphique
+            if key == 27: # echap
+                mode=1
+                break
+        
+        #sinon:
+        #mode 3, reset graphique
+        if mode ==2:
+            mode=3
+        
+        
+            
+    if mode==3:
         pass
     
     if key==ord('q'): # quitter avec 'q'
