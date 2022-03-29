@@ -233,23 +233,33 @@ def positionnerTable(img,fenetre,coin1,coin2):
        imFond : image de fond sur laquelle on trace la trajectoire
        fenetre : nom de la fenetre OpenCV
 """
+# def affTraj(listPos,imFond,l,L,coin1,coin2):
+#     if len(listPos)>1:
+#         cv2.line(imFond,getCoordProjection(listPos[0][:2], l, L, coin1, coin2),getCoordProjection(listPos[1][:2], l, L, coin1, coin2),(255,255,255),5)
+#         cv2.line(imFond,getCoordProjection(listPos[-2][:2], l, L, coin1, coin2),getCoordProjection(listPos[-1][:2], l, L, coin1, coin2),(0,0,0),5)
 def affTraj(listPos,imFond):
-    cv2.line(imFond,listPos[0][:2],listPos[1][:2],(255,255,255),5)
-    cv2.line(imFond,listPos[-2][:2],listPos[-1][:2],(0,0,0),5)
+    if len(listPos)>1:
+        cv2.line(imFond,listPos[0][:2],listPos[1][:2],(255,255,255),5)
+        cv2.line(imFond,listPos[-2][:2],listPos[-1][:2],(0,0,0),5)
 
-    
+
+
 """
 ## Trace la trajectoire en pointillés
 
 @param listPos : liste des positions de la bille à afficher
        imFond : image de fond sur laquelle on trace la trajectoire
-       fenetre : nom de la fenetre OpenCV
 """
-def affTrajPrevis(listPos,imFond,fenetre):
-    color = (0,0,0)
+def affTrajPrevis(listPos,imFond):
     for i in range (len(listPos)):
-        cv2.circle(imFond,(listPos[i]),15,color,-1)
+        cv2.circle(imFond,(listPos[i][:2]),15,(0,0,0),-1)
     
+
+def affTrajTotal(listPos,imFond):
+    for i in range(len(listPos)-1):
+        cv2.line(imFond,listPos[i][:2],listPos[i+1][:2],(0,0,0),5)
+    
+
 
 """
 ## Transforme les coordonnées réelles en coordonées sur l'image à afficher
@@ -263,7 +273,7 @@ def affTrajPrevis(listPos,imFond,fenetre):
         y4 : ordonnée de la bille sur l'image projetée
 """
 def getCoordProjection(coord,l,L,coin1,coin2):   
-    xreel,yreel = coord
+    xreel,yreel = coord[:2]
     #Translation de l'origine du repere dans le coin
     x2 = xreel+l/2
     y2 = yreel+L/2
@@ -290,7 +300,7 @@ def getCoordProjection(coord,l,L,coin1,coin2):
         yreel : ordonnée de la bille dans le repère réel
 """
 def getInvCoordProjection(coord,l,L,coin1,coin2):
-    x4,y4 = coord
+    x4,y4 = coord[:2]
     coefX = (coin2[0]-coin1[0])/L
     coefY = (coin2[1]-coin1[1])/l
     x3 = (x4-coin1[0])/coefX

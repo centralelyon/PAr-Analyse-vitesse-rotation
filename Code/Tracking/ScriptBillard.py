@@ -18,6 +18,24 @@ import time as t
 import screeninfo
 import json
 import timeit as ti
+import os
+import csv
+
+
+def sauvTraj(trajs,coin1,coin2):
+    os.chdir('Trajectoires_sauvegardees')
+    nbTrajSauv = len(os.listdir())
+    for t in trajs:
+        nbTrajSauv+=1
+        with open ('Trajectoire'+str(nbTrajSauv)+'.csv','a') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Coin sup gauche',coin1,'Coin inf droit',coin2])
+            writer.writerow(['x','y','t'])
+            for p in t:
+                writer.writerow(list(p))
+    os.chdir('..')
+        
+
 
 
 def detectionRebond(lV,seuil1):
@@ -93,7 +111,7 @@ cv2.putText(fond2," Veuillez patienter, la caméra se connecte...",(coin1[0],int
 cv2.imshow(window_name,fond2)
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -155,16 +173,14 @@ rebond=False
 instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
 fond2=fond.copy()
+instantDebutTrajectoire=t.time()
+arret=True
+
+
 compteur = 1
 start = t.time()
 while True:
-    compteur+=1
-    if compteur==1000:
-        compteur=1
-        ct = t.time()
-        print(ct-start)
-        start = ct
-    
+   
     
     key = cv2.waitKey(1) # Lecture d'interraction clavier par l'utilisateur
     #fond2 = fond.copy() # Copie de l'image de fond générique, qui sera modifiée si l'on doit afficher de nouvelles choses
@@ -191,48 +207,54 @@ while True:
             Reconstruction3D.affTraj(listPosProj,fond2)
             
             #traitement de la trajectoire à sauvegarder
-            if (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
+            if  (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
                 instantDernierAjout=currentTime
-                derniereTrajectoire.append(realCenter)
+                derniereTrajectoire.append(realCenter+tuple([currentTime-instantDebutTrajectoire]))
+                
  
         
         #detection arret
-        if arret:
-            if not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
-                #réinitialiser et initialiser les liste de tracking
-                derniereTrajectoire=[positionArret]
-                arret=False
-                cv2.putText(fond2,"                           ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-                cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-    
-        else:
-           #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
-            if len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
-                positionArret=realCenter #si on passe à l'arret, on sauvegarde la position d'arret
-                arret=True
-                cv2.putText(fond2,"                           ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-                cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
         
+        if arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+            #réinitialiser et initialiser les liste de tracking
+            derniereTrajectoire=[positionArret+tuple([0])]
+            instantDebutTrajectoire=currentTime
+            arret=False
+            #print('En mouvement')
+            cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
+            cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+
+        #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
+        if not arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
+            positionArret=realCenter #si on passe à l'arret, on sauvegarde la position d'arret
+            arret=True
+            #print('A l arret')
+            cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
+            cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
+     
         #Détection rebond
         if len(derniereVitesse)==nbVitesse:
             if detectionRebond(derniereVitesse,seuilRebond):
                 #print("Rebond !")
                 rebond=True
                 tpsrebond=t.time()
-        
+            
         # Affichage temporaire
         if rebond: 
+            #print(rebond)
             cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            rebond = False
+            
         if currentTime-tpsrebond>1.5:
-            cv2.putText(fond2,"                       ",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-        
+            cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
+            
             
         
         
         # Calcul et affichage vitesse
         if len(derniereTrajectoire)>1:
+            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
-            cv2.putText(fond2,"Vitesse :                                                     ",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 200, 0), 2)
             cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 200, 0), 2)
             derniereVitesse.append(vitesseBille)
             if len(derniereVitesse)>nbVitesse:
@@ -242,7 +264,7 @@ while True:
         
         #sauvegarde
         if key==ord("s") and arret:
-            dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2) for c in derniereTrajectoire]
+            dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
             trajectoiresSauvegardees.append(dt)
             
         #passage au mode 1 uniquement si on a des trajectoires enregistrées
@@ -275,7 +297,7 @@ while True:
         indTrajSelectionnee=0   
         cv2.putText(fond2,"1",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 0, 255), 2)
 
-        Reconstruction3D.affTraj(trajectoiresSauvegardees[0],fond2)
+        Reconstruction3D.affTrajTotal(trajectoiresSauvegardees[0],fond2)
         
         
         
@@ -291,6 +313,7 @@ while True:
                 break
             
             if key == 27: #echap
+                fond2=fond.copy()    
                 mode=0
                 break
             
@@ -304,14 +327,13 @@ while True:
                 
                 #tracer le chiffre selectionné en couleur, afficher la trajectoire
                 cv2.putText(fond2,str(indTrajSelectionnee+1),(int(allData["coeftextInfoX"]*width + 50 * indTrajSelectionnee ),int(allData["coeftextMoovY"]*height + 200 )),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 0, 255), 2)
-                Reconstruction3D.affTraj(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
+                Reconstruction3D.affTrajTotal(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
                 
                 cv2.imshow(window_name,fond2)
         
     
         
     if mode==2:
-        print('mode 2')
         # On reprend le fond de base
         fond2=fond.copy()
         #fond: selection du mode.
@@ -321,20 +343,20 @@ while True:
         cv2.putText(fond2,"indique",(int(allData["coeftextInfoX"]*width),int(1.8*allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         
         #afficher la position de la balle  en pointillés
-        posIni = trajectoiresSauvegardees[indTrajSelectionnee][0]
+        posIni = trajectoiresSauvegardees[indTrajSelectionnee][0][:2]
         cv2.circle(fond2,posIni,150,(0,0,255),6,cv2.LINE_AA)
         cv2.imshow(window_name,fond2)
         fond3 = fond2.copy()
         cv2.circle(fond3,posIni,200,(0,0,255),9,cv2.LINE_AA)
         #fond 3= fond
         #fond3 = fond2.copy()
-        distanceMin=5
+        distanceMin=20
         posIniReel = Reconstruction3D.getInvCoordProjection(posIni,largeur,longueur,coin1,coin2)
-        print(posIniReel)
+        #print(posIniReel)
         #lancer le tracking: while key!=echap and balle pas au bon endroit et ca fait pas 3 sec
         balleNonPlace = True
         instantflag = t.time()
-        while balleNonPlace or t.time()-instantflag<3:
+        while balleNonPlace or abs(t.time()-instantflag)<3:
             #getkey
             key = cv2.waitKey(1)
             
@@ -342,18 +364,21 @@ while True:
             center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
             if center !=None:
                 realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
-                
-                print(str((realCenter[0]-posIniReel[0])**2 + (realCenter[1]-posIniReel[1])**2))
+
+                #print(str((realCenter[0]-posIniReel[0])**2 + (realCenter[1]-posIniReel[1])**2))
                 
                 #si abs(centretrack - centrepos )<eps
                     #flag=1
                     #instantflag=t.time
                 if (realCenter[0]-posIniReel[0])**2 + (realCenter[1]-posIniReel[1])**2 <= distanceMin**2:
+                    if balleNonPlace:
+                        instantflag = t.time()
                     balleNonPlace = False
-                    instantflag = t.time()
-                    #si c'est dedans: on épaissit le trait
+                    
+                    #si c'est dedans: on double le cercle
                     cv2.imshow(window_name, fond3)
                 else:
+                    balleNonPlace=True
                     cv2.imshow(window_name, fond2)
             
             #si echap:
@@ -365,13 +390,15 @@ while True:
         #sinon:
         #mode 3, reset graphique
         if mode ==2:
+            fond2=fond.copy()
             mode=3
         
         
             
     if mode==3:
-        print("mode3")
-        pass
+        Reconstruction3D.affTrajPrevis(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
+        
+        cv2.imshow(window_name,fond2)
     
     if key==ord('q'): # quitter avec 'q'
         cv2.destroyAllWindows()
@@ -381,4 +408,7 @@ while True:
 # Sauvegarde d'éventuelles modifications des paramètres de AllData
 with open('AllData.json', 'w') as file:
 	json.dump(allData, file)
+    
+# Sauvegarde des trajectoires
+sauvTraj(trajectoiresSauvegardees, coin1, coin2)
     
