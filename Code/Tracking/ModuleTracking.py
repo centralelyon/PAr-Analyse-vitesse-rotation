@@ -153,6 +153,7 @@ def trackingBillard(frame,upper,lower):
     cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
     center = None
     
+    
     #si on a trouvé des contours, on trouve le plus grand et on en déduit centroide+cercle ausculateur
     if len(cnts):
         #imcont2=cv2.drawContours(frame, cnts, -1, (0,255,0), 1 )
@@ -162,7 +163,8 @@ def trackingBillard(frame,upper,lower):
         ((x,y),radius)= cv2.minEnclosingCircle(c)
         
         M=cv2.moments(c)
-        if M["m00"] and M["m00"] and 5<radius<15:
+        #if M["m00"] and M["m00"] and 5<radius<15:
+        if M["m00"] and M["m00"] and 5<radius:
             center= ( int(M["m10"]/M["m00"]) , int(M["m01"]/M["m00"]))
     return center
 
