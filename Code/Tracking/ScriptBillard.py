@@ -32,19 +32,19 @@ def detectionRebond(lV,seuil1):
         if (lV[i][0]>=0)!=signeX: # Changement de signe de Vx
             #print('Rebond X potentiel')
             if abs(lV[i-1][0]-lV[i][0])>seuil:
-                print('Rebond X confirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0])
+                #print('Rebond X confirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0])
                 rebond=True
             else:
-                print('Rebond X infirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0])
+                #print('Rebond X infirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0])
                 pass
 
         if (lV[i][1]>=0)!=signeY: # Changement de signe de Vx
             #print('Rebond Y potentiel')
             if abs(lV[i-1][1]-lV[i][1])>seuil:
-                print('Rebond Y confirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1])
+                #print('Rebond Y confirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1])
                 rebond=True
             else:
-                print('Rebond Y infirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1])
+                #print('Rebond Y infirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1])
                 pass
         i+=1
     return rebond
@@ -92,7 +92,7 @@ cv2.putText(fond2," Veuillez patienter, la caméra se connecte...",(coin1[0],int
 cv2.imshow(window_name,fond2)
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -207,7 +207,7 @@ while True:
         #☺Détection rebond
         if len(derniereVitesse)==nbVitesse:
             if detectionRebond(derniereVitesse,seuilRebond):
-                print("Rebond !")
+                #print("Rebond !")
                 rebond=True
                 tpsrebond=t.time()
         
@@ -273,7 +273,7 @@ while True:
         while True:
             key=cv2.waitKey(1)
             
-            if key ==ord("\n"): #enter
+            if key ==ord("\r"): #enter
                 mode=2
                 #supprimer background?
                 break
@@ -299,21 +299,26 @@ while True:
     
         
     if mode==2:
+        print('mode 2')
         # On reprend le fond de base
         fond2=fond.copy()
         #fond: selection du mode.
         #effacer chiffres selection du mode 3
         cv2.putText(fond2,"Placez la bille",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
-        cv2.putText(fond2,"à l'endroit indiqué",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
+        cv2.putText(fond2,"a l'endroit",(int(allData["coeftextInfoX"]*width),int(1.4*allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
+        cv2.putText(fond2,"indique",(int(allData["coeftextInfoX"]*width),int(1.8*allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         
         #afficher la position de la balle  en pointillés
         posIni = trajectoiresSauvegardees[indTrajSelectionnee][0]
-        cv2.circle(fond2,posIni,6,(0,100,100),3,cv2.LINE_AA)
-        
+        cv2.circle(fond2,posIni,150,(0,0,255),6,cv2.LINE_AA)
+        cv2.imshow(window_name,fond2)
+        fond3 = fond2.copy()
+        cv2.circle(fond3,posIni,200,(0,0,255),9,cv2.LINE_AA)
         #fond 3= fond
         #fond3 = fond2.copy()
         distanceMin=5
         posIniReel = Reconstruction3D.getInvCoordProjection(posIni,largeur,longueur,coin1,coin2)
+        print(posIniReel)
         #lancer le tracking: while key!=echap and balle pas au bon endroit et ca fait pas 3 sec
         balleNonPlace = True
         instantflag = t.time()
@@ -326,8 +331,8 @@ while True:
             if center !=None:
                 realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
                 
-        
-            
+                print(str((realCenter[0]-posIniReel[0])**2 + (realCenter[1]-posIniReel[1])**2))
+                
                 #si abs(centretrack - centrepos )<eps
                     #flag=1
                     #instantflag=t.time
@@ -335,7 +340,9 @@ while True:
                     balleNonPlace = False
                     instantflag = t.time()
                     #si c'est dedans: on épaissit le trait
-                    cv2.circle(fond2,posIni,8,(0,100,100),3,cv2.LINE_AA)
+                    cv2.imshow(window_name, fond3)
+                else:
+                    cv2.imshow(window_name, fond2)
             
             #si echap:
             #mode 1, reset graphique
@@ -351,6 +358,7 @@ while True:
         
             
     if mode==3:
+        print("mode3")
         pass
     
     if key==ord('q'): # quitter avec 'q'
