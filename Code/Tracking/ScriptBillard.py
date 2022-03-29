@@ -78,8 +78,15 @@ cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-Reconstruction3D.positionnerTable(fond,window_name,coin1,coin2)
+resized = Reconstruction3D.positionnerTable(fond,window_name,coin1,coin2)
 
+if resized : # On a redéfini les dimensions du rectangle
+    allData["coefRectangeX1"] = round(coin1[0]/width,5)
+    allData["coefRectangeY1"] = round(coin1[1]/height,5)
+    allData["coefRectangeX2"] = round(coin2[0]/width,5)
+    allData["coefRectangeY2"] = round(coin2[1]/height,5)
+   
+    
 fond2 = fond.copy()
 cv2.putText(fond2," Veuillez patienter, la caméra se connecte...",(coin1[0],int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 cv2.imshow(window_name,fond2)

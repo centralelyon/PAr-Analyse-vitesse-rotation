@@ -186,7 +186,6 @@ def findRealCoordinatesBillard(coord,homography,dimensions,epaisseurBord):
 """
 def drawRectangle(event,x,y,flags,params):
     if event==cv2.EVENT_LBUTTONDOWN:
-        print(x,y)
         if params[2]==1:
             cv2.rectangle(params[3],params[0],params[1],(255,255,255),5)
             params[0]= (x,y)
@@ -210,10 +209,11 @@ def positionnerTable(img,fenetre,coin1,coin2):
     print("Veuillez positioner l'intérieur de la table dans le rectangle")
     img = cv2.rectangle(img,coin1,coin2,(0,0,0),5)
     cv2.imshow(fenetre,img)
+    change = False
     while True:
         k = cv2.waitKey(1)
         if k==ord('r'): # On veut changer les dimensions du rectangle
-            
+            change =True
             params=[coin1,coin2,1,img,fenetre]
             cv2.setMouseCallback(fenetre,drawRectangle,params)
             while params[2]<3:
@@ -224,7 +224,7 @@ def positionnerTable(img,fenetre,coin1,coin2):
             img = params[3]
         if k ==ord('q'):
             break
-
+    return change
 
 """
 ## Trace la trajectoire en reliant une liste de points
