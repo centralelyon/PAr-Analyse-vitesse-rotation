@@ -17,6 +17,7 @@ import numpy as np
 import time as t
 import screeninfo
 import json
+import timeit as ti
 
 
 def detectionRebond(lV,seuil1):
@@ -92,7 +93,7 @@ cv2.putText(fond2," Veuillez patienter, la caméra se connecte...",(coin1[0],int
 cv2.imshow(window_name,fond2)
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -131,8 +132,7 @@ cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN
 ## Phase nominale du programme
 
 # Variable du tracé de la trajectoire
-listPosProj=[] # Liste des position de la bille à projeter
-listTimeAdd=[] # Liste des instants d'ajouts des éléments à listPosProj
+listPosProj=[] # Liste des position de la bille à projeter et instant de détection
 tempsTrace = allData["tpsTraceTrajectoire"] # Temps qu'un point de la trajectoire reste affiché
 
 # Variables de l'enregistrement de la trajectoire
@@ -154,30 +154,39 @@ rebond=False
 
 instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
-
+fond2=fond.copy()
+compteur = 1
+start = t.time()
 while True:
+    compteur+=1
+    if compteur==1000:
+        compteur=1
+        ct = t.time()
+        print(ct-start)
+        start = ct
+    
+    
     key = cv2.waitKey(1) # Lecture d'interraction clavier par l'utilisateur
-    fond2 = fond.copy() # Copie de l'image de fond générique, qui sera modifiée si l'on doit afficher de nouvelles choses
+    #fond2 = fond.copy() # Copie de l'image de fond générique, qui sera modifiée si l'on doit afficher de nouvelles choses
     
     
     if mode == 0:
         grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
         
         center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
+        currentTime = t.time()
         if center !=None:
             # Obtention des coordonnées "réelles" grâce à l'homographie
             realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
             
             # Ajout à la liste des positions de la trajectoire à tracer
-            listPosProj.append(Reconstruction3D.getCoordProjection(realCenter,largeur,longueur,coin1,coin2))
-            currentTime = t.time()
-            listTimeAdd.append(currentTime)
+            x3,y3 = Reconstruction3D.getCoordProjection(realCenter,largeur,longueur,coin1,coin2)
+            listPosProj.append((x3,y3,currentTime))
 
             #traitement de la trajectoire à tracer : effacement après tempsTrace secondes 
-            if (currentTime-listTimeAdd[0]>tempsTrace):
+            if (currentTime-listPosProj[0][2]>tempsTrace):
                 listPosProj.pop(0)
-                listTimeAdd.pop(0)
-			
+		
             # Affichage de la trajectoire sur l'image de fond  
             Reconstruction3D.affTraj(listPosProj,fond2)
             
@@ -189,22 +198,22 @@ while True:
         
         #detection arret
         if arret:
-            cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
-            # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
-            if  not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+            if not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
                 derniereTrajectoire=[positionArret]
                 arret=False
+                cv2.putText(fond2,"                           ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+                cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
     
         else:
-            cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-            # 250, 400 : déterminés pour le PC de la salle Amigo : à transformer en coef * screen.width ou screen.height
-            #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
-            if  len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): #si on passe à l'arret, on sauvegarde la position d'arret
-                positionArret=realCenter
+           #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
+            if len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
+                positionArret=realCenter #si on passe à l'arret, on sauvegarde la position d'arret
                 arret=True
+                cv2.putText(fond2,"                           ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+                cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
         
-        #☺Détection rebond
+        #Détection rebond
         if len(derniereVitesse)==nbVitesse:
             if detectionRebond(derniereVitesse,seuilRebond):
                 #print("Rebond !")
@@ -212,15 +221,18 @@ while True:
                 tpsrebond=t.time()
         
         # Affichage temporaire
-        if rebond and currentTime-tpsrebond<1.5:
-            
+        if rebond: 
             cv2.putText(fond2,"Rebond !",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-                
+        if currentTime-tpsrebond>1.5:
+            cv2.putText(fond2,"                       ",(int(allData["coeftextInfoX"]*width),3*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+        
+            
         
         
         # Calcul et affichage vitesse
         if len(derniereTrajectoire)>1:
             vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/tempsAjoutTrajectoire,(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/tempsAjoutTrajectoire)
+            cv2.putText(fond2,"Vitesse :                                                     ",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 200, 0), 2)
             cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 200, 0), 2)
             derniereVitesse.append(vitesseBille)
             if len(derniereVitesse)>nbVitesse:

@@ -234,9 +234,8 @@ def positionnerTable(img,fenetre,coin1,coin2):
        fenetre : nom de la fenetre OpenCV
 """
 def affTraj(listPos,imFond):
-    color = (0,0,0)
-    for i in range (len(listPos)-1):
-        cv2.line(imFond,listPos[i],listPos[i+1],color,5)
+    cv2.line(imFond,listPos[0][:2],listPos[1][:2],(255,255,255),5)
+    cv2.line(imFond,listPos[-2][:2],listPos[-1][:2],(0,0,0),5)
 
     
 """
