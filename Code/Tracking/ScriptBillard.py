@@ -161,7 +161,7 @@ trajectoiresSauvegardees=[] # Liste des trajectoires sauvegardées
 # Variables pour la détection de l'arrêt de la bille
 tempsDetectionArret=allData["tpsArret"] # Temps d'immobilité nécessaie pour que l'arrêt soit détecté
 seuil = allData["seuilArret"] #Déplacement maximal pour que la bille soit définie comme à l'arrêt
-arret=False # Booléen indiquant si la bille est à l'arrêt
+arret=True # Booléen indiquant si la bille est à l'arrêt
 positionArret=(0,0) # Position de la bille à l'arrêt
 vitesseBille = (0,0) # Vitesse de la bille
 derniereVitesse = [] # Dernieres vitesses de la bille utilisées pour détecter le rebond
@@ -174,11 +174,8 @@ instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
 fond2=fond.copy()
 instantDebutTrajectoire=t.time()
-arret=True
 
 
-compteur = 1
-start = t.time()
 while True:
    
     
@@ -318,12 +315,12 @@ while True:
                 #supprimer background?
                 break
             
-            if key == 27: #echap
+            elif key == 27: #echap
                 fond2=fond.copy()    
                 mode=0
                 break
             
-            if 49 <= key <= 49+len(trajectoiresSauvegardees)-1:
+            elif 49 <= key <= 49+len(trajectoiresSauvegardees)-1:
                 #réinitialisation de l'image 
         
                 fond2=fond3.copy()
@@ -336,7 +333,9 @@ while True:
                 Reconstruction3D.affTrajTotal(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
                 
                 cv2.imshow(window_name,fond2)
-        
+            
+            elif key==ord('q'):
+                break
     
         
     if mode==2:
@@ -392,19 +391,85 @@ while True:
             if key == 27: # echap
                 mode=1
                 break
+            
+            elif key==ord('q'):
+                break
         
         #sinon:
-        #mode 3, reset graphique
+        #mode 3, reset graphique et preset
         if mode ==2:
             fond2=fond.copy()
+            Reconstruction3D.affTrajPrevis(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
+            derniereTrajectoire=[positionArret+tuple([0])]
+            listPosProj=[Reconstruction3D.getCoordProjection(positionArret,largeur,longueur,coin1,coin2)]
+            instantDebutTrajectoire=t.time()
+            arret=False
+            finCoup=False
             mode=3
         
         
             
     if mode==3:
-        Reconstruction3D.affTrajPrevis(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
+        # L'affichage de la trajectoire sauvegardée se fait au moment de la transition, pour que l'on ne raffiche pas la trajectoire à chaque itération de la boucle while
         
-        cv2.imshow(window_name,fond2)
+        if not finCoup : # L'utilisateur n'a pas fini son coup
+            grabbed,frame = camera.read()
+            center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
+            currentTime = t.time()
+            if center !=None:
+                # Obtention des coordonnées "réelles" grâce à l'homographie
+                realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
+                # Ajout à la liste des positions de la trajectoire à tracer
+                x3,y3 = Reconstruction3D.getCoordProjection(realCenter,largeur,longueur,coin1,coin2)
+                listPosProj.append((x3,y3,currentTime))
+		
+                # Affichage de la trajectoire sur l'image de fond  
+                Reconstruction3D.affTrajRejeu(listPosProj,fond2)
+            
+                #traitement de la trajectoire à sauvegarder
+                if  (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
+                    instantDernierAjout=currentTime
+                    derniereTrajectoire.append(realCenter+tuple([currentTime-instantDebutTrajectoire]))
+                    
+            #detection arret
+            if arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+                #réinitialiser et initialiser les liste de tracking
+                derniereTrajectoire=[positionArret+tuple([0])]
+                instantDebutTrajectoire=currentTime
+                arret=False
+            
+            #Lorsque la balle s'arrête, c'est la fin du coup rejoué
+            if not arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
+                arret=True
+                finCoup=True
+        
+            cv2.imshow(window_name,fond2)
+        
+        else: # Interrcation avec l'utilisateur pour savoir quoi faire
+        
+            if key==48: # Retour au mode 0
+                fond2=fond.copy()
+                positionArret=realCenter
+                mode=0
+            
+            elif key==49: #_Retour au mode 1
+                mode=1
+            
+            elif key==50: # Retour au mode 2
+                mode=2
+            
+            elif key==ord('s'):
+                dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
+                trajectoiresSauvegardees.append(dt)
+            
+            elif key==ord('S'):
+                dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
+                trajectoiresSauvegardees[indTrajSelectionnee]=dt
+            
+        
+        
+        
+            
     
     if key==ord('q'): # quitter avec 'q'
         cv2.destroyAllWindows()

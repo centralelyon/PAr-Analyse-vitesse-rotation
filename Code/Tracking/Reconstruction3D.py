@@ -259,7 +259,9 @@ def affTrajTotal(listPos,imFond):
     for i in range(len(listPos)-1):
         cv2.line(imFond,listPos[i][:2],listPos[i+1][:2],(0,0,0),5)
     
-
+def affTrajRejeu(listPos,imFond):
+   if len(listPos)>1:
+        cv2.line(imFond,listPos[-2][:2],listPos[-1][:2],(0,0,0),5)
 
 """
 ## Transforme les coordonnées réelles en coordonées sur l'image à afficher

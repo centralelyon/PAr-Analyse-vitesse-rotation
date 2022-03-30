@@ -143,12 +143,14 @@ def tracking(camera,typeSoustraction):
     cv2.destroyAllWindows()
     
 def trackingBillard(frame,upper,lower):
+    #cv2.imshow('frame',frame)
     #floutage pour éliminer les effets des hautes fréquences
     blurred=cv2.GaussianBlur(frame,(5,5),0)
     #convert to hsv
     hsv=cv2.cvtColor(blurred,cv2.COLOR_BGR2HSV)
     #construction du masque de couleur
     mask=cv2.inRange(hsv,lower,upper)
+    #cv2.imshow('mask',mask)
     #recherche de contour
     cnts = cv2.findContours(mask.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[-2]
     center = None
