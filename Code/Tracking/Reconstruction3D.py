@@ -237,9 +237,11 @@ def positionnerTable(img,fenetre,coin1,coin2):
 #     if len(listPos)>1:
 #         cv2.line(imFond,getCoordProjection(listPos[0][:2], l, L, coin1, coin2),getCoordProjection(listPos[1][:2], l, L, coin1, coin2),(255,255,255),5)
 #         cv2.line(imFond,getCoordProjection(listPos[-2][:2], l, L, coin1, coin2),getCoordProjection(listPos[-1][:2], l, L, coin1, coin2),(0,0,0),5)
-def affTraj(listPos,imFond):
+def affTraj(listPos,imFond,cT,tpsTrace):
     if len(listPos)>1:
-        cv2.line(imFond,listPos[0][:2],listPos[1][:2],(255,255,255),5)
+        if cT-listPos[0][2]>tpsTrace:
+            cv2.line(imFond,listPos[0][:2],listPos[1][:2],(255,255,255),5)
+            listPos.pop(0)
         cv2.line(imFond,listPos[-2][:2],listPos[-1][:2],(0,0,0),5)
 
 

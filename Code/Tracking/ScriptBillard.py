@@ -200,11 +200,8 @@ while True:
             listPosProj.append((x3,y3,currentTime))
 
             #traitement de la trajectoire à tracer : effacement après tempsTrace secondes 
-            if (currentTime-listPosProj[0][2]>tempsTrace):
-                listPosProj.pop(0)
-		
             # Affichage de la trajectoire sur l'image de fond  
-            Reconstruction3D.affTraj(listPosProj,fond2)
+            Reconstruction3D.affTraj(listPosProj,fond2,currentTime,tempsTrace)
             # 0.0038 s
             
             #traitement de la trajectoire à sauvegarder
@@ -269,6 +266,7 @@ while True:
         if key==ord("s") and arret:
             dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
             trajectoiresSauvegardees.append(dt)
+            
             
         #passage au mode 1 uniquement si on a des trajectoires enregistrées
         if key==ord("r") and len(trajectoiresSauvegardees)>0:
@@ -400,10 +398,11 @@ while True:
         if mode ==2:
             fond2=fond.copy()
             Reconstruction3D.affTrajPrevis(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
-            derniereTrajectoire=[positionArret+tuple([0])]
-            listPosProj=[Reconstruction3D.getCoordProjection(positionArret,largeur,longueur,coin1,coin2)]
+            #derniereTrajectoire=[ posIniReel+tuple([0]) ]
+            derniereTrajectoire=[realCenter+tuple([0])]
+            listPosProj= [posIni+tuple([0])]
             instantDebutTrajectoire=t.time()
-            arret=False
+            arret=True
             finCoup=False
             mode=3
         
@@ -411,8 +410,7 @@ while True:
             
     if mode==3:
         # L'affichage de la trajectoire sauvegardée se fait au moment de la transition, pour que l'on ne raffiche pas la trajectoire à chaque itération de la boucle while
-        
-        if not finCoup : # L'utilisateur n'a pas fini son coup
+        if not finCoup: # L'utilisateur n'a pas fini son coup
             grabbed,frame = camera.read()
             center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
             currentTime = t.time()
@@ -431,10 +429,10 @@ while True:
                     instantDernierAjout=currentTime
                     derniereTrajectoire.append(realCenter+tuple([currentTime-instantDebutTrajectoire]))
                     
-            #detection arret
+            #detection debut trajectoire
             if arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
                 #réinitialiser et initialiser les liste de tracking
-                derniereTrajectoire=[positionArret+tuple([0])]
+                derniereTrajectoire=[posIniReel+tuple([0])]
                 instantDebutTrajectoire=currentTime
                 arret=False
             
@@ -442,6 +440,7 @@ while True:
             if not arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
                 arret=True
                 finCoup=True
+                positionArret=realCenter
         
             cv2.imshow(window_name,fond2)
         
@@ -449,7 +448,6 @@ while True:
         
             if key==48: # Retour au mode 0
                 fond2=fond.copy()
-                positionArret=realCenter
                 mode=0
             
             elif key==49: #_Retour au mode 1
