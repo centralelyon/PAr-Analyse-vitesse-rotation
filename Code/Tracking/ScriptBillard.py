@@ -188,15 +188,18 @@ while True:
     
     if mode == 0:
         grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
+        # 33.23 s
         
         center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
+        # 0.954 s
         currentTime = t.time()
         if center !=None:
             # Obtention des coordonnées "réelles" grâce à l'homographie
             realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
-            
+            # 0.0067 s
             # Ajout à la liste des positions de la trajectoire à tracer
             x3,y3 = Reconstruction3D.getCoordProjection(realCenter,largeur,longueur,coin1,coin2)
+            # 0.0036 s
             listPosProj.append((x3,y3,currentTime))
 
             #traitement de la trajectoire à tracer : effacement après tempsTrace secondes 
@@ -205,6 +208,7 @@ while True:
 		
             # Affichage de la trajectoire sur l'image de fond  
             Reconstruction3D.affTraj(listPosProj,fond2)
+            # 0.0038 s
             
             #traitement de la trajectoire à sauvegarder
             if  (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
@@ -223,7 +227,8 @@ while True:
             #print('En mouvement')
             cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
             cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-
+            # 0.14 s
+            
         #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
         if not arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
             positionArret=realCenter #si on passe à l'arret, on sauvegarde la position d'arret
@@ -231,10 +236,11 @@ while True:
             #print('A l arret')
             cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
             cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
-     
+            # 0.14 s
+            
         #Détection rebond
         if len(derniereVitesse)==nbVitesse:
-            if detectionRebond(derniereVitesse,seuilRebond):
+            if detectionRebond(derniereVitesse,seuilRebond): # 0.03s
                 #print("Rebond !")
                 rebond=True
                 tpsrebond=t.time()

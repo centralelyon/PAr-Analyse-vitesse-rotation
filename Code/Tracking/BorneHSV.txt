@@ -1,0 +1,4 @@
+Cube QR code : 
+min : 36,0,227
+max : 68,69,255
+--> bicolores dont blqnc comme la table de ping-pong donc calibration assez moyenne. Sans doute plus simple avec les bleus des joueurs...
