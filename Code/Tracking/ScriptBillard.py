@@ -88,7 +88,7 @@ height,width = screen.height,screen.width
 coin1 = (int(allData["coefRectangleX1"]*width),int(allData["coefRectangleY1"]*height))
 coin2 = (int(allData["coefRectangleX2"]*width),int(allData["coefRectangleY2"]*height))
 fond = np.ones((height,width,3))
-
+fond2 = fond.copy()
 
 
 # Full screen et affiché par dessus les autres fenêtres dès le début
@@ -97,21 +97,24 @@ cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-resized = Reconstruction3D.positionnerTable(fond,window_name,coin1,coin2)
+resized,newCoin1,newCoin2 = Reconstruction3D.positionnerTable(fond2,window_name,coin1,coin2)
 
 if resized : # On a redéfini les dimensions du rectangle
-    allData["coefRectangeX1"] = round(coin1[0]/width,5)
-    allData["coefRectangeY1"] = round(coin1[1]/height,5)
-    allData["coefRectangeX2"] = round(coin2[0]/width,5)
-    allData["coefRectangeY2"] = round(coin2[1]/height,5)
-   
+    coin1 = newCoin1
+    coin2 = newCoin2
+    allData["coefRectangleX1"] = round(coin1[0]/width,5)
+    allData["coefRectangleY1"] = round(coin1[1]/height,5)
+    allData["coefRectangleX2"] = round(coin2[0]/width,5)
+    allData["coefRectangleY2"] = round(coin2[1]/height,5)
+fond = cv2.rectangle(fond,coin1,coin2,(0,0,0),5)
     
 fond2 = fond.copy()
-cv2.putText(fond2," Veuillez patienter, la caméra se connecte...",(coin1[0],int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+cv2.putText(fond2," Veuillez patienter, la camera se connecte...",(int((3*coin1[0]+coin2[0])/4),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 cv2.imshow(window_name,fond2)
 
+
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -120,13 +123,18 @@ epaisseurBord = allData["epaisseurBordBillard"]
 diametre = allData["diametreBille"]
 isOK=False
 
-cv2.destroyAllWindows()
-while not isOK:
-    answer = input("Voulez vous utiliser la matrice d'homographie sauvegardée ou alors la déterminer à nouveau ? [y/n] \t")
-    if answer=="y":
+
+fond2 = fond.copy()
+cv2.putText(fond2,"Voulez vous utiliser la matrice d'homographie sauvegardee",(int(1.1*coin1[0]),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+cv2.putText(fond2,"ou alors la determiner e nouveau ? [y/n]",(int(1.1*coin1[0]),int((4*coin1[1]+6*coin2[1])/10)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+cv2.imshow(window_name,fond2)
+while True:
+    key = cv2.waitKey()
+    if key == ord('y'):
         hg = np.array(allData["homography"])
-        isOK = True
-    elif answer=="n":
+        break
+    elif key == ord('n'):
+        cv2.destroyAllWindows()
         hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
         l4 = [list(e) for e in hg]
         l5=[]
@@ -136,8 +144,7 @@ while not isOK:
                 ltemp.append(l4[i][j].item()) # conversion int32 to int
             l5.append(ltemp)
         allData["homography"] = l5
-        isOK=True
-        
+        break
 
 
 #redéfinition car cv2.destroyAllWIndows() dans positionnerTable a supprimé les propriétés
