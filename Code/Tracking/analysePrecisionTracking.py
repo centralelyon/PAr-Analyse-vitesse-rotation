@@ -90,13 +90,13 @@ R2 = lr.rvalue
 
 x = list(range(int(min(allSpeed)),int(max(allSpeed)),1))
 y = [pente*abscisse+ordoneeOrigine for abscisse in x]
-plt.plot(x,y,'blue')
+#plt.plot(x,y,'blue')
 
 objectif = 7.7
 yobj = objectif * np.ones((int(max(allSpeed)),1))
 plt.plot(x,yobj,color="red",linestyle='--')
 
-plt.title("err = "+str(round(pente,2))+"*vit + "+str(round(ordoneeOrigine,2))+" ; R^2 ="+str(round(R2,4)))
+#plt.title("err = "+str(round(pente,2))+"*vit + "+str(round(ordoneeOrigine,2))+" ; R^2 ="+str(round(R2,4)))
 plt.xlabel("Vitesse (px/s)")
 plt.ylabel("Erreur de tracking (px)")
 plt.grid(True)
