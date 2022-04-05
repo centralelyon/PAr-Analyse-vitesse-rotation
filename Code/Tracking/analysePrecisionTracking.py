@@ -15,7 +15,7 @@ liste_x_trackee = []
 liste_y_trackee = []
 
 #ouverture de la vidéo
-video = cv2.VideoCapture("coup_1_trimmed.mp4")
+video = cv2.VideoCapture("coup_5_trimmed.mp4")
 
 lower = (0, 166, 0)
 upper = (9, 255, 255)
@@ -38,6 +38,13 @@ while True:
         print(nFrame)
         cv2.imshow("Frame manquee",frame)
         cv2.waitKey(1000)
+     
+    #visualisation de la frame, et mise en pause    
+    #cv2.imshow("Frame",frame)
+    if cv2.waitKey(100)==ord(" "):
+        cv2.waitKey(0)
+        
+    
     
     nFrame+=1
         
@@ -47,7 +54,7 @@ while True:
 
 
 #ouverture du fichier texte
-f = open("coup_1_trimmed.txt",'r',encoding="utf-8") 
+f = open("coup_5_trimmed.txt",'r',encoding="utf-8") 
 stringFile = f.read()
 f.close()
 
@@ -85,7 +92,7 @@ plt.scatter(liste_x_trackee,liste_y_trackee_plot,c='red',marker="x")
 
 #plt.axis('scaled')
 plt.xlim(713,1326)
-plt.ylim(1530,1785)
+plt.ylim(1530,1792)
 plt.xlabel("x (px)")
 plt.ylabel("y (px)")
 plt.title("Comparaison des trajectoires pointées et trackées")
@@ -114,7 +121,7 @@ plt.scatter(liste_temps,liste_erreurs,marker="x",color="orange")
 plt.plot(liste_temps,yobj,color="red",linestyle='--')
 plt.plot(liste_temps,ymoy,color="green")
 plt.grid()
-plt.legend(["Erreur réelle","Critère de précision","Erreur moyenne"])
+plt.legend(["Erreur réelle","Critère de précision du cahier des charges","Erreur moyenne mesurée"])
 plt.xlabel("Temps (s)")
 plt.ylabel("Erreur de tracking (px)")
 plt.title("Erreur de tracking en fonction du temps")
