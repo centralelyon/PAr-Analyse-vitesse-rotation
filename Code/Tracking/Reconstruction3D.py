@@ -208,7 +208,7 @@ def drawRectangle(event,x,y,flags,params):
 """
 def positionnerTable(img,fenetre,coin1,coin2):
     img = cv2.rectangle(img,coin1,coin2,(0,0,0),5)
-    cv2.putText(img,"Veuillez positioner l'interieur de la table dans le rectangle",(int((3*coin1[0]+coin2[0])/4),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+    cv2.putText(img,"Veuillez positioner l'interieur de la table dans le rectangle",(int((14*coin1[0]+coin2[0])/15),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 2.75, (0, 0, 0), 2)
     cv2.imshow(fenetre,img)
     change = False
     c1=coin1
@@ -216,7 +216,8 @@ def positionnerTable(img,fenetre,coin1,coin2):
     while True:
         k = cv2.waitKey(1)
         if k==ord('r'): # On veut changer les dimensions du rectangle
-            cv2.putText(img,"Veuillez positioner l'intérieur de la table dans le rectangle",(int((3*coin1[0]+coin2[0])/4),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(img,"Veuillez positioner l'interieur de la table dans le rectangle",(int((14*coin1[0]+coin2[0])/15),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 2.75, (255, 255, 255), 5)
+            cv2.imshow(fenetre,img)
             change =True
             params=[c1,c2,1,img,fenetre]
             cv2.setMouseCallback(fenetre,drawRectangle,params)

@@ -106,15 +106,16 @@ if resized : # On a redéfini les dimensions du rectangle
     allData["coefRectangleY1"] = round(coin1[1]/height,5)
     allData["coefRectangleX2"] = round(coin2[0]/width,5)
     allData["coefRectangleY2"] = round(coin2[1]/height,5)
+
 fond = cv2.rectangle(fond,coin1,coin2,(0,0,0),5)
-    
+
 fond2 = fond.copy()
-cv2.putText(fond2," Veuillez patienter, la camera se connecte...",(int((3*coin1[0]+coin2[0])/4),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+cv2.putText(fond2,"Veuillez patienter, la camera se connecte...",(int((8*coin1[0]+2*coin2[0])/10),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 2.75, (0, 0, 0), 2)
 cv2.imshow(window_name,fond2)
 
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -125,8 +126,8 @@ isOK=False
 
 
 fond2 = fond.copy()
-cv2.putText(fond2,"Voulez vous utiliser la matrice d'homographie sauvegardee",(int(1.1*coin1[0]),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-cv2.putText(fond2,"ou alors la determiner e nouveau ? [y/n]",(int(1.1*coin1[0]),int((4*coin1[1]+6*coin2[1])/10)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+cv2.putText(fond2,"Voulez vous utiliser la matrice d'homographie sauvegardee",(int(1.5*coin1[0]),int((10*coin1[1]+8*coin2[1])/18)),cv2.FONT_HERSHEY_SIMPLEX, 2.75, (0, 0, 0), 2)
+cv2.putText(fond2,"ou alors la determiner a nouveau ? [y/n]",(int(1.5*coin1[0]),int((8*coin1[1]+10*coin2[1])/18)),cv2.FONT_HERSHEY_SIMPLEX, 2.75, (0, 0, 0), 2)
 cv2.imshow(window_name,fond2)
 while True:
     key = cv2.waitKey()
@@ -168,7 +169,7 @@ trajectoiresSauvegardees=[] # Liste des trajectoires sauvegardées
 # Variables pour la détection de l'arrêt de la bille
 tempsDetectionArret=allData["tpsArret"] # Temps d'immobilité nécessaie pour que l'arrêt soit détecté
 seuil = allData["seuilArret"] #Déplacement maximal pour que la bille soit définie comme à l'arrêt
-arret=True # Booléen indiquant si la bille est à l'arrêt
+arret=False # Booléen indiquant si la bille est à l'arrêt
 positionArret=(0,0) # Position de la bille à l'arrêt
 vitesseBille = (0,0) # Vitesse de la bille
 derniereVitesse = [] # Dernieres vitesses de la bille utilisées pour détecter le rebond
@@ -360,7 +361,7 @@ while True:
         cv2.circle(fond3,posIni,200,(0,0,255),9,cv2.LINE_AA)
         #fond 3= fond
         #fond3 = fond2.copy()
-        distanceMin=20
+        distanceMin=5
         posIniReel = Reconstruction3D.getInvCoordProjection(posIni,largeur,longueur,coin1,coin2)
         #print(posIniReel)
         #lancer le tracking: while key!=echap and balle pas au bon endroit et ca fait pas 3 sec
