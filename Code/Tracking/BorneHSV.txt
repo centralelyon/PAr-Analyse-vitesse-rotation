@@ -1,0 +1,10 @@
+Cube QR code : 
+min : 36,0,227
+max : 68,69,255
+--> bicolores dont blqnc comme la table de ping-pong donc calibration assez moyenne. Sans doute plus simple avec les bleus des joueurs...
+
+Balle blanche
+Cam frontale :
+min : 76,17,221
+max : 101,99,255
+--> On voit encore nettement les contours de la table, en blanc. L'algorithme saura t'il les refuser ? Non

@@ -88,7 +88,7 @@ height,width = screen.height,screen.width
 coin1 = (int(allData["coefRectangleX1"]*width),int(allData["coefRectangleY1"]*height))
 coin2 = (int(allData["coefRectangleX2"]*width),int(allData["coefRectangleY2"]*height))
 fond = np.ones((height,width,3))
-
+fond2 = fond.copy()
 
 
 # Full screen et affiché par dessus les autres fenêtres dès le début
@@ -97,21 +97,24 @@ cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-resized = Reconstruction3D.positionnerTable(fond,window_name,coin1,coin2)
+resized,newCoin1,newCoin2 = Reconstruction3D.positionnerTable(fond2,window_name,coin1,coin2)
 
 if resized : # On a redéfini les dimensions du rectangle
-    allData["coefRectangeX1"] = round(coin1[0]/width,5)
-    allData["coefRectangeY1"] = round(coin1[1]/height,5)
-    allData["coefRectangeX2"] = round(coin2[0]/width,5)
-    allData["coefRectangeY2"] = round(coin2[1]/height,5)
-   
+    coin1 = newCoin1
+    coin2 = newCoin2
+    allData["coefRectangleX1"] = round(coin1[0]/width,5)
+    allData["coefRectangleY1"] = round(coin1[1]/height,5)
+    allData["coefRectangleX2"] = round(coin2[0]/width,5)
+    allData["coefRectangleY2"] = round(coin2[1]/height,5)
+fond = cv2.rectangle(fond,coin1,coin2,(0,0,0),5)
     
 fond2 = fond.copy()
-cv2.putText(fond2," Veuillez patienter, la caméra se connecte...",(coin1[0],int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+cv2.putText(fond2," Veuillez patienter, la camera se connecte...",(int((3*coin1[0]+coin2[0])/4),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
 cv2.imshow(window_name,fond2)
 
+
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -120,13 +123,18 @@ epaisseurBord = allData["epaisseurBordBillard"]
 diametre = allData["diametreBille"]
 isOK=False
 
-cv2.destroyAllWindows()
-while not isOK:
-    answer = input("Voulez vous utiliser la matrice d'homographie sauvegardée ou alors la déterminer à nouveau ? [y/n] \t")
-    if answer=="y":
+
+fond2 = fond.copy()
+cv2.putText(fond2,"Voulez vous utiliser la matrice d'homographie sauvegardee",(int(1.1*coin1[0]),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+cv2.putText(fond2,"ou alors la determiner e nouveau ? [y/n]",(int(1.1*coin1[0]),int((4*coin1[1]+6*coin2[1])/10)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+cv2.imshow(window_name,fond2)
+while True:
+    key = cv2.waitKey()
+    if key == ord('y'):
         hg = np.array(allData["homography"])
-        isOK = True
-    elif answer=="n":
+        break
+    elif key == ord('n'):
+        cv2.destroyAllWindows()
         hg = Reconstruction3D.getHomographyForBillard(camera,upper,lower,(largeur,longueur),epaisseurBord,diametre)
         l4 = [list(e) for e in hg]
         l5=[]
@@ -136,8 +144,7 @@ while not isOK:
                 ltemp.append(l4[i][j].item()) # conversion int32 to int
             l5.append(ltemp)
         allData["homography"] = l5
-        isOK=True
-        
+        break
 
 
 #redéfinition car cv2.destroyAllWIndows() dans positionnerTable a supprimé les propriétés
@@ -161,7 +168,7 @@ trajectoiresSauvegardees=[] # Liste des trajectoires sauvegardées
 # Variables pour la détection de l'arrêt de la bille
 tempsDetectionArret=allData["tpsArret"] # Temps d'immobilité nécessaie pour que l'arrêt soit détecté
 seuil = allData["seuilArret"] #Déplacement maximal pour que la bille soit définie comme à l'arrêt
-arret=False # Booléen indiquant si la bille est à l'arrêt
+arret=True # Booléen indiquant si la bille est à l'arrêt
 positionArret=(0,0) # Position de la bille à l'arrêt
 vitesseBille = (0,0) # Vitesse de la bille
 derniereVitesse = [] # Dernieres vitesses de la bille utilisées pour détecter le rebond
@@ -174,11 +181,8 @@ instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
 fond2=fond.copy()
 instantDebutTrajectoire=t.time()
-arret=True
 
 
-compteur = 1
-start = t.time()
 while True:
    
     
@@ -188,23 +192,24 @@ while True:
     
     if mode == 0:
         grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
+        # 33.23 s
         
         center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
+        # 0.954 s
         currentTime = t.time()
         if center !=None:
             # Obtention des coordonnées "réelles" grâce à l'homographie
             realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
-            
+            # 0.0067 s
             # Ajout à la liste des positions de la trajectoire à tracer
             x3,y3 = Reconstruction3D.getCoordProjection(realCenter,largeur,longueur,coin1,coin2)
+            # 0.0036 s
             listPosProj.append((x3,y3,currentTime))
 
             #traitement de la trajectoire à tracer : effacement après tempsTrace secondes 
-            if (currentTime-listPosProj[0][2]>tempsTrace):
-                listPosProj.pop(0)
-		
             # Affichage de la trajectoire sur l'image de fond  
-            Reconstruction3D.affTraj(listPosProj,fond2)
+            Reconstruction3D.affTraj(listPosProj,fond2,currentTime,tempsTrace)
+            # 0.0038 s
             
             #traitement de la trajectoire à sauvegarder
             if  (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
@@ -223,7 +228,8 @@ while True:
             #print('En mouvement')
             cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
             cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
-
+            # 0.14 s
+            
         #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
         if not arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
             positionArret=realCenter #si on passe à l'arret, on sauvegarde la position d'arret
@@ -231,10 +237,11 @@ while True:
             #print('A l arret')
             cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
             cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
-     
+            # 0.14 s
+            
         #Détection rebond
         if len(derniereVitesse)==nbVitesse:
-            if detectionRebond(derniereVitesse,seuilRebond):
+            if detectionRebond(derniereVitesse,seuilRebond): # 0.03s
                 #print("Rebond !")
                 rebond=True
                 tpsrebond=t.time()
@@ -266,6 +273,7 @@ while True:
         if key==ord("s") and arret:
             dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
             trajectoiresSauvegardees.append(dt)
+            
             
         #passage au mode 1 uniquement si on a des trajectoires enregistrées
         if key==ord("r") and len(trajectoiresSauvegardees)>0:
@@ -312,12 +320,12 @@ while True:
                 #supprimer background?
                 break
             
-            if key == 27: #echap
+            elif key == 27: #echap
                 fond2=fond.copy()    
                 mode=0
                 break
             
-            if 49 <= key <= 49+len(trajectoiresSauvegardees)-1:
+            elif 49 <= key <= 49+len(trajectoiresSauvegardees)-1:
                 #réinitialisation de l'image 
         
                 fond2=fond3.copy()
@@ -330,7 +338,9 @@ while True:
                 Reconstruction3D.affTrajTotal(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
                 
                 cv2.imshow(window_name,fond2)
-        
+            
+            elif key==ord('q'):
+                break
     
         
     if mode==2:
@@ -386,19 +396,85 @@ while True:
             if key == 27: # echap
                 mode=1
                 break
+            
+            elif key==ord('q'):
+                break
         
         #sinon:
-        #mode 3, reset graphique
+        #mode 3, reset graphique et preset
         if mode ==2:
             fond2=fond.copy()
+            Reconstruction3D.affTrajPrevis(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
+            #derniereTrajectoire=[ posIniReel+tuple([0]) ]
+            derniereTrajectoire=[realCenter+tuple([0])]
+            listPosProj= [posIni+tuple([0])]
+            instantDebutTrajectoire=t.time()
+            arret=True
+            finCoup=False
             mode=3
         
         
             
     if mode==3:
-        Reconstruction3D.affTrajPrevis(trajectoiresSauvegardees[indTrajSelectionnee],fond2)
+        # L'affichage de la trajectoire sauvegardée se fait au moment de la transition, pour que l'on ne raffiche pas la trajectoire à chaque itération de la boucle while
+        if not finCoup: # L'utilisateur n'a pas fini son coup
+            grabbed,frame = camera.read()
+            center = ModuleTracking.trackingBillard(frame,upper,lower) # Détection de la position de la bille sur cette image
+            currentTime = t.time()
+            if center !=None:
+                # Obtention des coordonnées "réelles" grâce à l'homographie
+                realCenter = Reconstruction3D.findRealCoordinatesBillard(center,hg,(largeur,longueur),epaisseurBord)
+                # Ajout à la liste des positions de la trajectoire à tracer
+                x3,y3 = Reconstruction3D.getCoordProjection(realCenter,largeur,longueur,coin1,coin2)
+                listPosProj.append((x3,y3,currentTime))
+		
+                # Affichage de la trajectoire sur l'image de fond  
+                Reconstruction3D.affTrajRejeu(listPosProj,fond2)
+            
+                #traitement de la trajectoire à sauvegarder
+                if  (currentTime-instantDernierAjout>tempsAjoutTrajectoire): 
+                    instantDernierAjout=currentTime
+                    derniereTrajectoire.append(realCenter+tuple([currentTime-instantDebutTrajectoire]))
+                    
+            #detection debut trajectoire
+            if arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and not(Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):] , seuil)): #si on se met à bouger, on commence une nouvelle trajectoire
+                #réinitialiser et initialiser les liste de tracking
+                derniereTrajectoire=[posIniReel+tuple([0])]
+                instantDebutTrajectoire=currentTime
+                arret=False
+            
+            #Lorsque la balle s'arrête, c'est la fin du coup rejoué
+            if not arret and len(derniereTrajectoire)>=tempsDetectionArret/(2*tempsAjoutTrajectoire) and Reconstruction3D.detectionArret(derniereTrajectoire[int(-tempsDetectionArret/tempsAjoutTrajectoire):], seuil): 
+                arret=True
+                finCoup=True
+                positionArret=realCenter
         
-        cv2.imshow(window_name,fond2)
+            cv2.imshow(window_name,fond2)
+        
+        else: # Interrcation avec l'utilisateur pour savoir quoi faire
+        
+            if key==48: # Retour au mode 0
+                fond2=fond.copy()
+                mode=0
+            
+            elif key==49: #_Retour au mode 1
+                mode=1
+            
+            elif key==50: # Retour au mode 2
+                mode=2
+            
+            elif key==ord('s'):
+                dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
+                trajectoiresSauvegardees.append(dt)
+            
+            elif key==ord('S'):
+                dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
+                trajectoiresSauvegardees[indTrajSelectionnee]=dt
+            
+        
+        
+        
+            
     
     if key==ord('q'): # quitter avec 'q'
         cv2.destroyAllWindows()

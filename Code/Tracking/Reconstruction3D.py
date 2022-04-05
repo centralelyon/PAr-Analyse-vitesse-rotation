@@ -103,13 +103,13 @@ def addPoint(camera,upper,lower,location):
 """
 def getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre):
     # Liste des positions sur l'image
-    igc = addPoint(camera,upper,lower,"inférieur gauche")
-    idc = addPoint(camera,upper,lower,"inférieur droit")
     sgc = addPoint(camera,upper,lower,"supérieur gauche")
+    igc = addPoint(camera,upper,lower,"inférieur gauche")
     sdc = addPoint(camera,upper,lower,"supérieur droit")
-    coordPixel=np.array([list(igc),list(idc),list(sgc),list(sdc)])
+    idc = addPoint(camera,upper,lower,"inférieur droit")
+    coordPixel=np.array([list(sgc),list(igc),list(sdc),list(idc)])
     
-    # Liste des postions dans l'espace, le coin inférieur gauche est (0,0) mais on doit ajouter un décalage du à la taille de la bille
+    # Liste des postions dans l'espace, le coin supérieur gauche est (0,0) mais on doit ajouter un décalage du à la taille de la bille
     dx = np.sqrt(2)/4*diametre
     coordReel=np.array([[2*epaisseurBord+dx,2*epaisseurBord+dx],[2*epaisseurBord+dimensions[0]-dx,2*epaisseurBord+dx],[2*epaisseurBord+dx,2*epaisseurBord+dimensions[1]-dx],[2*epaisseurBord+dimensions[0]-dx,2*epaisseurBord+dimensions[1]-dx]])
     
@@ -117,6 +117,7 @@ def getHomographyForBillard(camera,upper,lower,dimensions,epaisseurBord,diametre
     h, status = cv2.findHomography(coordPixel,coordReel)
     
     if status.all():
+        # Centrage du repère
         translate = np.array([[1,0,-epaisseurBord],[0,1,-epaisseurBord],[0,0,1]])
         homography = translate.dot(h)
     else:
@@ -206,25 +207,28 @@ def drawRectangle(event,x,y,flags,params):
        fenetre : nom de la fenetre OpenCV
 """
 def positionnerTable(img,fenetre,coin1,coin2):
-    print("Veuillez positioner l'intérieur de la table dans le rectangle")
     img = cv2.rectangle(img,coin1,coin2,(0,0,0),5)
+    cv2.putText(img,"Veuillez positioner l'interieur de la table dans le rectangle",(int((3*coin1[0]+coin2[0])/4),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
     cv2.imshow(fenetre,img)
     change = False
+    c1=coin1
+    c2=coin2
     while True:
         k = cv2.waitKey(1)
         if k==ord('r'): # On veut changer les dimensions du rectangle
+            cv2.putText(img,"Veuillez positioner l'intérieur de la table dans le rectangle",(int((3*coin1[0]+coin2[0])/4),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
             change =True
-            params=[coin1,coin2,1,img,fenetre]
+            params=[c1,c2,1,img,fenetre]
             cv2.setMouseCallback(fenetre,drawRectangle,params)
             while params[2]<3:
                 c = cv2.waitKey(1)
             cv2.setMouseCallback(fenetre, lambda *args : None)
-            coin1=params[0]
-            coin2=params[1]
+            c1=params[0]
+            c2=params[1]
             img = params[3]
         if k ==ord('q'):
             break
-    return change
+    return change,c1,c2
 
 """
 ## Trace la trajectoire en reliant une liste de points
@@ -237,9 +241,11 @@ def positionnerTable(img,fenetre,coin1,coin2):
 #     if len(listPos)>1:
 #         cv2.line(imFond,getCoordProjection(listPos[0][:2], l, L, coin1, coin2),getCoordProjection(listPos[1][:2], l, L, coin1, coin2),(255,255,255),5)
 #         cv2.line(imFond,getCoordProjection(listPos[-2][:2], l, L, coin1, coin2),getCoordProjection(listPos[-1][:2], l, L, coin1, coin2),(0,0,0),5)
-def affTraj(listPos,imFond):
+def affTraj(listPos,imFond,cT,tpsTrace):
     if len(listPos)>1:
-        cv2.line(imFond,listPos[0][:2],listPos[1][:2],(255,255,255),5)
+        if cT-listPos[0][2]>tpsTrace:
+            cv2.line(imFond,listPos[0][:2],listPos[1][:2],(255,255,255),5)
+            listPos.pop(0)
         cv2.line(imFond,listPos[-2][:2],listPos[-1][:2],(0,0,0),5)
 
 
@@ -259,7 +265,9 @@ def affTrajTotal(listPos,imFond):
     for i in range(len(listPos)-1):
         cv2.line(imFond,listPos[i][:2],listPos[i+1][:2],(0,0,0),5)
     
-
+def affTrajRejeu(listPos,imFond):
+   if len(listPos)>1:
+        cv2.line(imFond,listPos[-2][:2],listPos[-1][:2],(0,0,0),5)
 
 """
 ## Transforme les coordonnées réelles en coordonées sur l'image à afficher

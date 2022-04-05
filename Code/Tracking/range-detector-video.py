@@ -85,7 +85,7 @@ def main():
     namevideo = "SUB_echanges_1.mp4"
     namevideo = "coup_4_trimmed.mp4"
 
-    camera = cv2.VideoCapture(namevideo)
+    camera = cv2.VideoCapture(1)
     #camera = cv2.VideoCapture(0)
     
     while True:
