@@ -110,6 +110,7 @@ coin1 = (int(allData["coefRectangleX1"]*width),int(allData["coefRectangleY1"]*he
 coin2 = (int(allData["coefRectangleX2"]*width),int(allData["coefRectangleY2"]*height))
 fond = np.ones((height,width,3))
 fond2 = fond.copy()
+yZoneCommande = int(allData["coeftextCmdY"]*height)
 
 
 # Full screen et affiché par dessus les autres fenêtres dès le début
@@ -118,7 +119,7 @@ cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
 cv2.moveWindow(window_name, screen.x - 1, screen.y - 1)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_TOPMOST, 1)
-resized,newCoin1,newCoin2 = Reconstruction3D.positionnerTable(fond2,window_name,coin1,coin2)
+resized,newCoin1,newCoin2 = Reconstruction3D.positionnerTable(fond2,window_name,coin1,coin2,yZoneCommande)
 
 if resized : # On a redéfini les dimensions du rectangle
     coin1 = newCoin1
@@ -207,6 +208,12 @@ instantDernierAjout=t.time()
 mode = 0  # Mode de fonctionnement du programe
 fond2=fond.copy()
 instantDebutTrajectoire=t.time()
+
+# Commandes disponibles
+cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+
 
 
 while True:
@@ -318,7 +325,11 @@ while True:
         
     if mode == 1:
         fond2=fond.copy() #on efface l'ecran .
-        
+        cv2.putText(fond2,"1 a 9 : Selectionner une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"Entree : Valider le choix",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"echap : Retourner au mode de jeu classique",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+
         #listeOrdChiffres=[ord(str(i+1)) for i in range(9)] #chiffres de 1 à 9
         # 1 <-> 49 / 2 <-> 50 / 9 <-> 57
         
@@ -355,6 +366,10 @@ while True:
             elif key == 27: #echap
                 fond2=fond.copy()    
                 mode=0
+                cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+
                 break
             
             elif 49 <= key <= 49+len(trajectoiresSauvegardees)-1:
@@ -383,6 +398,10 @@ while True:
         cv2.putText(fond2,"Placez la bille",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         cv2.putText(fond2,"a l'endroit",(int(allData["coeftextInfoX"]*width),int(1.4*allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         cv2.putText(fond2,"indique",(int(allData["coeftextInfoX"]*width),int(1.8*allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
+        
+        cv2.putText(fond2,"echap : Retour a la selection de la trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+
         
         #afficher la position de la balle  en pointillés
         posIni = trajectoiresSauvegardees[indTrajSelectionnee][0][:2]
@@ -480,6 +499,14 @@ while True:
                 arret=True
                 finCoup=True
                 positionArret=realCenter
+                # Affichage des nouvelles commandes
+                cv2.putText(fond2,"0 : Retour au mode de jeu classique",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"1 : Rejouer un autre coup",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"2 : Rejouer le meme coup",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"s : Sauvegarder la nouvelle trajectoire",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"Maj + s : Sauvegarder en ecrasant l'ancienne trajectoire",(coin1[0],int(yZoneCommande*1.4)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.5)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+
         
             cv2.imshow(window_name,fond2)
         
@@ -487,6 +514,9 @@ while True:
             listPosProj=[]
             if key==48: # Retour au mode 0
                 fond2=fond.copy()
+                cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
                 mode=0
             
             elif key==49: #_Retour au mode 1
@@ -502,9 +532,8 @@ while True:
             elif key==ord('S'):
                 dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
                 trajectoiresSauvegardees[indTrajSelectionnee]=dt
-            
-        
-        
+                
+
         
             
     

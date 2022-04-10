@@ -206,9 +206,11 @@ def drawRectangle(event,x,y,flags,params):
 @param img : image de fond
        fenetre : nom de la fenetre OpenCV
 """
-def positionnerTable(img,fenetre,coin1,coin2):
+def positionnerTable(img,fenetre,coin1,coin2,yZoneCommande):
     img = cv2.rectangle(img,coin1,coin2,(0,0,0),5)
     cv2.putText(img,"Veuillez positioner l'interieur de la table dans le rectangle",(int((14*coin1[0]+coin2[0])/15),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 2.75, (0, 0, 0), 2)
+    cv2.putText(img,"Espace, entree ou q : Valider",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+    cv2.putText(img,"r : Redimensionner le rectangle",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
     cv2.imshow(fenetre,img)
     change = False
     c1=coin1
@@ -217,6 +219,9 @@ def positionnerTable(img,fenetre,coin1,coin2):
         k = cv2.waitKey(1)
         if k==ord('r'): # On veut changer les dimensions du rectangle
             cv2.putText(img,"Veuillez positioner l'interieur de la table dans le rectangle",(int((14*coin1[0]+coin2[0])/15),int((coin1[1]+coin2[1])/2)),cv2.FONT_HERSHEY_SIMPLEX, 2.75, (255, 255, 255), 5)
+            cv2.putText(img,"Espace, entree ou q : Valider",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
+            cv2.putText(img,"r : Redimensionner le rectangle",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
+            cv2.putText(img,"Placez les coins superieur gauche et inferieur droit a l'aide de la souris",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
             cv2.imshow(fenetre,img)
             change =True
             params=[c1,c2,1,img,fenetre]
@@ -227,7 +232,11 @@ def positionnerTable(img,fenetre,coin1,coin2):
             c1=params[0]
             c2=params[1]
             img = params[3]
-        if k ==ord('q'):
+            cv2.putText(img,"Placez les coins superieur gauche et inferieur droit a l'aide de la souris",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
+            cv2.putText(img,"Espace, entree ou q : Valider",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(img,"r : Redimensionner le rectangle",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.imshow(fenetre,img)
+        if k ==ord('q') or k==ord(' ') or k==ord('\r'):
             break
     return change,c1,c2
 
