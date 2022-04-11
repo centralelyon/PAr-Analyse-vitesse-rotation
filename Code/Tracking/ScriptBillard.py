@@ -40,7 +40,6 @@ def sauvTraj(trajs,coin1,coin2):
 
 def detectionRebond(lV,seuil):
     rebond = False
-    i=1
     #Signe global de la trajectoire
     vitX = np.mean([lV[i][0] for i in range(len(lV))])
     vitY = np.mean([lV[i][1] for i in range(len(lV))])
@@ -52,21 +51,21 @@ def detectionRebond(lV,seuil):
     if (lV[-1][0]>=0)!=signeX: # Changement de signe de Vx
         #print('Rebond X potentiel')
         if abs(lV[-2][0]-lV[-1][0])>seuil:
-            print('Rebond X confirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0],i)
+            print('Rebond X confirme',lV[-2][0],lV[-1][0],lV[-2][0]-lV[-1][0])
             rebond=True
             axis = 0
         else:
-            #print('Rebond X infirme',lV[i-1][0],lV[i][0],lV[i-1][0]-lV[i][0])
+            print('Rebond X infirme',lV[-2][0],lV[-1][0],lV[-2][0]-lV[-1][0])
             pass
 
     if (lV[-1][1]>=0)!=signeY: # Changement de signe de Vx
         #print('Rebond Y potentiel')
         if abs(lV[-2][1]-lV[-1][1])>seuil:
-            print('Rebond Y confirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1],i)
+            print('Rebond Y confirme',lV[-2][1],lV[-1][1],lV[-2][1]-lV[-1][1])
             rebond=True
             axis = 1
         else:
-            #print('Rebond Y infirme',lV[i-1][1],lV[i][1],lV[i-1][1]-lV[i][1])
+            print('Rebond Y infirme',lV[-2][1],lV[-1][1],lV[-2][1]-lV[-1][1])
             pass
     
     return rebond,axis
@@ -140,7 +139,7 @@ cv2.imshow(window_name,fond2)
 
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(0)
+camera = cv2.VideoCapture(1)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -211,11 +210,11 @@ instantDebutTrajectoire=t.time()
 
 # Commandes disponibles 
 cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
 
-
+nombresCoups = 0
 
 while True:
    
@@ -225,6 +224,8 @@ while True:
     
     
     if mode == 0:
+        nombresCoups = 0 #reinitialise le nombre de coups (mode 4)
+        
         grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
         # 33.23 s
         
@@ -323,19 +324,23 @@ while True:
         if key==ord("p") and arret:
             fond2 = fond.copy()
             
-            cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"p : Quitter la partie",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"p : Quitter la partie",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
             
-            cv2.putText(fond2,"Pour gagner, il faut ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"Pour gagner, il faut ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+100),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
             cv2.putText(fond2,"que la bille s'arrete ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+200),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"dans le cercle après ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+400),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"deux rebonds exactement. ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"dans le cercle apres ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+300),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"2 rebonds exactement. ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+400),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"Vous avez 9 essais ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+500),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
             
             cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
             
             mode=4
+            key = 0
+            
+            trajectoiresSauvegardees=[]
+            nombresCoups = 0 #reinitialise uniquement de 0 vers 4
             
         cv2.imshow(window_name,fond2)
             
@@ -345,9 +350,9 @@ while True:
     if mode == 1:
         fond2=fond.copy() #on efface l'ecran .
         cv2.putText(fond2,"1 a 9 : Selectionner une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-        cv2.putText(fond2,"Entree : Valider le choix",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-        cv2.putText(fond2,"echap : Retourner au mode de jeu classique",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-        cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"Entree : Valider le choix",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"echap : Retourner au mode de jeu classique",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
 
         #listeOrdChiffres=[ord(str(i+1)) for i in range(9)] #chiffres de 1 à 9
         # 1 <-> 49 / 2 <-> 50 / 9 <-> 57
@@ -386,9 +391,9 @@ while True:
                 fond2=fond.copy()    
                 mode=0
                 cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
                 
 
                 break
@@ -421,7 +426,7 @@ while True:
         cv2.putText(fond2,"indique",(int(allData["coeftextInfoX"]*width),int(1.8*allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5 , (0, 255, 0), 2)
         
         cv2.putText(fond2,"echap : Retour a la selection de la trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-        cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
 
         
         #afficher la position de la balle  en pointillés
@@ -484,6 +489,9 @@ while True:
             arret=True
             finCoup=False
             mode=3
+            if nombresCoups!=0: # On vient du mode 4
+                cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
+                
         
         
             
@@ -522,11 +530,14 @@ while True:
                 positionArret=realCenter
                 # Affichage des nouvelles commandes
                 cv2.putText(fond2,"0 : Retour au mode de jeu classique",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"1 : Rejouer un autre coup",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"2 : Rejouer le meme coup",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"s : Sauvegarder la nouvelle trajectoire",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"Maj + s : Sauvegarder en ecrasant l'ancienne trajectoire",(coin1[0],int(yZoneCommande*1.4)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.5)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"1 : Rejouer un autre coup",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"2 : Rejouer le meme coup",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                if nombresCoups!=0:
+                    cv2.putText(fond2,"p : Retour a la partie",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+    
+                cv2.putText(fond2,"s : Sauvegarder la nouvelle trajectoire",(int((coin1[0]+coin2[0])/2),yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"Maj + s : Sauvegarder en ecrasant l'ancienne trajectoire",(int((coin1[0]+coin2[0])/2),int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(int((coin1[0]+coin2[0])/2),int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
 
         
             cv2.imshow(window_name,fond2)
@@ -536,10 +547,9 @@ while True:
             if key==48: # Retour au mode 0
                 fond2=fond.copy()
                 cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-
-                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
                 mode=0
             
             elif key==49: #_Retour au mode 1
@@ -547,6 +557,25 @@ while True:
             
             elif key==50: # Retour au mode 2
                 mode=2
+                
+            #passage au mode 4 possible uniquement si on est à l'arrêt. 
+            if key==ord("p"):
+                fond2 = fond.copy()
+                
+                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"p : Quitter la partie",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                
+                cv2.putText(fond2,"Pour gagner, il faut ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+100),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"que la bille s'arrete ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+200),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"dans le cercle apres ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+300),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"2 rebonds exactement. ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+400),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"Vous avez 9 essais ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+500),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                
+                cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
+                
+                mode=4
+                key = 0
             
             elif key==ord('s'):
                 dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
@@ -556,10 +585,11 @@ while True:
                 dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
                 trajectoiresSauvegardees[indTrajSelectionnee]=dt
                 
+                
     #C'est le mode de jeu inventé pour la soutenance.
     #Le code est le mode 0, adapté.            
     if mode == 4: 
-
+        
         grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
         # 33.23 s
         
@@ -601,8 +631,7 @@ while True:
             #cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
             
             #on affiche plus si mouvement mais uniquement si gagné/perdu. ici en blanc pour effacer. a la limite message d'attente
-            cv2.putText(fond2,"Gagne",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
-            cv2.putText(fond2,"Perdu",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
+            cv2.putText(fond2,"Rate !",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
             # 0.14 s
             
             
@@ -617,6 +646,10 @@ while True:
         if not arret and len(derniereTrajectoire)>=10 and Reconstruction3D.detectionArret(derniereTrajectoire[-10:], seuil): 
             positionArret=realCenter 
             arret=True
+            nombresCoups += 1
+            dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
+            trajectoiresSauvegardees.append(dt)
+            
             #print('A l arret')
             #cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
             #cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
@@ -629,15 +662,30 @@ while True:
                 #on retrace trace 2 cercles (en plus gras?)
                 cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
                 cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 430, (0,0,0),5)
+                cv2.imshow(window_name,fond2)
+                cv2.waitKey(3000)
+                fond2=fond.copy()    
+                mode=0
+                cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+
                 
                 
                 
             else:
                 #si c'est perdu, on trace le cercle en plus petit
-                cv2.putText(fond2,"Perdu",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0,255), 2)
+                cv2.putText(fond2,"Rate !",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0,255), 2)
             
                 cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (255,255,255),5)
                 cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),2)
+                cv2.putText(fond2,"Vous avez "+str(10-nombresCoups)+" essais ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+500),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
+                if nombresCoups==8:    
+                    cv2.putText(fond2,"Vous avez "+str(9-nombresCoups)+" essai ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+500),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                else:
+                    cv2.putText(fond2,"Vous avez "+str(9-nombresCoups)+" essais ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+500),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                
                 
             print(nbRebond)
             nbRebond=0
@@ -673,29 +721,34 @@ while True:
             if len(derniereVitesse)>nbVitesse:
                 derniereVitesse.pop(0)
         
-        
-        
-        
-        
-        #sauvegarde
-        if key==ord("s") and arret:
-            dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
-            trajectoiresSauvegardees.append(dt)
-            
-        #passage au mode 0, si on est à l'arret
-        if key == 27 and arret:
+        if nombresCoups==9:
+            cv2.putText(fond2,"Perdu !",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0,255), 2)
+            cv2.imshow(window_name,fond2)
+            cv2.waitKey(3000)
             fond2=fond.copy()    
             mode=0
             cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-            cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        
+
+        
+        #passage au mode 0, si on est à l'arret
+        if key == ord("p") and arret:
+            fond2=fond.copy()    
+            mode=0
+            cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
         
         
         #passage au mode 1 uniquement si on a des trajectoires enregistrées
         if key==ord("r") and len(trajectoiresSauvegardees)>0 and arret:
             mode=1
-            
+        
+        
         cv2.imshow(window_name,fond2)        
             
     
