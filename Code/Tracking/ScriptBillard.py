@@ -140,7 +140,7 @@ cv2.imshow(window_name,fond2)
 
 
 # Obtention de l'homographie entre la vision de la caméra et la vue de dessus du billard.
-camera = cv2.VideoCapture(1)
+camera = cv2.VideoCapture(0)
 upper=tuple(map(int,allData["upperBornRed"][1:-1].split(','))) # Borne supérieure de recherche de couleur dans l'espace HSV
 lower=tuple(map(int,allData["lowerBornRed"][1:-1].split(','))) # Borne inférieure de recherche de couleur dans l'espace HSV
 largeur = allData["largeurBillard"]
@@ -316,11 +316,25 @@ while True:
             
             
         #passage au mode 1 uniquement si on a des trajectoires enregistrées
-        if key==ord("r") and len(trajectoiresSauvegardees)>0:
+        if key==ord("r") and len(trajectoiresSauvegardees)>0 and arret:
             mode=1
             
         #passage au mode 4 possible uniquement si on est à l'arrêt. 
         if key==ord("p") and arret:
+            fond2 = fond.copy()
+            
+            cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"p : Quitter la partie",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            
+            cv2.putText(fond2,"Pour gagner, il faut ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"que la bille s'arrete ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+200),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"dans le cercle après ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+400),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"deux rebonds exactement. ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            
+            cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
+            
             mode=4
             
         cv2.imshow(window_name,fond2)
@@ -545,11 +559,7 @@ while True:
     #C'est le mode de jeu inventé pour la soutenance.
     #Le code est le mode 0, adapté.            
     if mode == 4: 
-        #afficher resultat
-        
-        #on affiche le cercle à chaque fois
-        #cv2.circle(fond2
-        
+
         grabbed,frame = camera.read() # Lecture de l'image vue par la caméra
         # 33.23 s
         
@@ -587,22 +597,50 @@ while True:
             instantDebutTrajectoire=currentTime
             arret=False
             #print('En mouvement')
-            cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
-            cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            #cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
+            #cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+            
+            #on affiche plus si mouvement mais uniquement si gagné/perdu. ici en blanc pour effacer. a la limite message d'attente
+            cv2.putText(fond2,"Gagne",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
+            cv2.putText(fond2,"Perdu",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
             # 0.14 s
+            
+            
+            #réinitialisation des cercles: 
+            cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
+            cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 430, (255,255,255),5)
+            
+            #réinitialisation des rectangles
             cv2.rectangle(fond2,coin1Rebond,coin2Rebond,(255,255,255),5)
             
-        #on n'autorise que des mouvements de + d'1 sec. (arbitraire)
-        #si on passe à l'arret
+        #si on passe à l'arret.Autoriser les trajectoires plus petites que 10?
         if not arret and len(derniereTrajectoire)>=10 and Reconstruction3D.detectionArret(derniereTrajectoire[-10:], seuil): 
             positionArret=realCenter 
             arret=True
+            #print('A l arret')
+            #cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
+            #cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
+            # 0.14 s
+            
+            #Si on est dans le cercle ET qu'on a fait 2 rebonds
+            if nbRebond==2 and (x3 - int((coin1[0]+coin2[0])/2))**2 + (y3 - int((coin1[1]+coin2[1])/2))**2 <= 400**2: #400 utilisé plus haut pour la taille du cercle à tracer?
+                cv2.putText(fond2,"Gagne",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 200, 0), 2)
+                
+                #on retrace trace 2 cercles (en plus gras?)
+                cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
+                cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 430, (0,0,0),5)
+                
+                
+                
+            else:
+                #si c'est perdu, on trace le cercle en plus petit
+                cv2.putText(fond2,"Perdu",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0,255), 2)
+            
+                cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (255,255,255),5)
+                cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),2)
+                
             print(nbRebond)
             nbRebond=0
-            #print('A l arret')
-            cv2.putText(fond2,"En mouvement",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (255, 255, 255), 2)
-            cv2.putText(fond2,"A l'arret",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 2.5, (0, 0, 255), 2)
-            # 0.14 s
             
         #Détection rebond
         if len(derniereVitesse)==nbVitesse:
@@ -623,17 +661,19 @@ while True:
     
         
         
-        # Calcul et affichage vitesse
+        # Calcul et affichage vitesse. Pas ici?
         if len(derniereTrajectoire)>1:                
-            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
+            #cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 2)
             if arret:
                 vitesseBille=(0,0)
             else:
                 vitesseBille=((derniereTrajectoire[-1][0]-derniereTrajectoire[-2][0])/(derniereTrajectoire[-1][2]-derniereTrajectoire[-2][2]),(derniereTrajectoire[-1][1]-derniereTrajectoire[-2][1])/(derniereTrajectoire[-1][2]-derniereTrajectoire[-2][2]))
-            cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 200, 0), 2)
+            #cv2.putText(fond2,"Vitesse : "+str(round(np.linalg.norm(vitesseBille),2))+" mm/s",(int(allData["coeftextInfoX"]*width),2*int(allData["coeftextMoovY"]*height)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 200, 0), 2)
             derniereVitesse.append(vitesseBille)
             if len(derniereVitesse)>nbVitesse:
                 derniereVitesse.pop(0)
+        
+        
         
         
         
@@ -642,19 +682,23 @@ while True:
             dt = [Reconstruction3D.getCoordProjection(c, largeur,longueur,coin1,coin2)+tuple([c[2]]) for c in derniereTrajectoire]
             trajectoiresSauvegardees.append(dt)
             
-            
+        #passage au mode 0, si on est à l'arret
+        if key == 27 and arret:
+            fond2=fond.copy()    
+            mode=0
+            cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.2)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+            cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.3)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+        
+        
         #passage au mode 1 uniquement si on a des trajectoires enregistrées
-        if key==ord("r") and len(trajectoiresSauvegardees)>0:
+        if key==ord("r") and len(trajectoiresSauvegardees)>0 and arret:
             mode=1
             
-        cv2.imshow(window_name,fond2)
-
-        
-        #initialisation du temps 
-        
-        #affichage trajectoire
-        
+        cv2.imshow(window_name,fond2)        
             
+    
     
     if key==ord('q'): # quitter avec 'q'
         cv2.destroyAllWindows()
