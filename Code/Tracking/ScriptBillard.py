@@ -389,13 +389,30 @@ while True:
                 break
             
             elif key == 27: #echap
-                fond2=fond.copy()    
-                mode=0
-                cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
-                
+                if nombresCoups==0: # On vient du mode 0
+                    fond2=fond.copy()    
+                    mode=0
+                    cv2.putText(fond2,"s : Sauvegarder une trajectoire",(coin1[0],yZoneCommande),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"p : Lancer une partie",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.15)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                else:
+                    fond2 = fond.copy()
+                    
+                    cv2.putText(fond2,"r : Selectionner une trajectoire pour la rejouer",(coin1[0],int(yZoneCommande)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"p : Quitter la partie",(coin1[0],int(yZoneCommande*1.05)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"q : Quitter",(coin1[0],int(yZoneCommande*1.1)),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    
+                    cv2.putText(fond2,"Pour gagner, il faut ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+100),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"que la bille s'arrete ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+200),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"dans le cercle apres ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+300),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"2 rebonds exactement. ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+400),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    cv2.putText(fond2,"Vous avez "+str(9-nombresCoups)+" essais ",(int(allData["coeftextInfoX"]*width),int(allData["coeftextMoovY"]*height)+500),cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 2)
+                    
+                    cv2.circle(fond2, (int((coin1[0]+coin2[0])/2),int((coin1[1]+coin2[1])/2)), 400, (0,0,0),5)
+                    
+                    mode=4
+                    key = 0
 
                 break
             
