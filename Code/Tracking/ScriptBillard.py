@@ -455,7 +455,7 @@ while True:
         cv2.circle(fond3,posIni,200,(0,0,255),9,cv2.LINE_AA)
         #fond 3= fond
         #fond3 = fond2.copy()
-        distanceMin=5
+        distanceMin=10
         posIniReel = Reconstruction3D.getInvCoordProjection(posIni,largeur,longueur,coin1,coin2)
         #print(posIniReel)
         #lancer le tracking: while key!=echap and balle pas au bon endroit et ca fait pas 3 sec
